@@ -11,3 +11,5 @@ dist/
 /target
 target/
 *.so
+data/
+.claude/

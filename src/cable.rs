@@ -73,14 +73,20 @@ impl Cable {
 
     /// Advance `v` by `dt` ms with injected currents `current` (nA), backward Euler.
     pub fn step(&self, v: &mut [f64], current: &[f64], dt: f64) {
-        let mut diag: Vec<f64> = (0..self.len())
-            .map(|i| self.cap[i] / dt + self.g_leak[i])
-            .collect();
         let mut rhs: Vec<f64> = (0..self.len())
             .map(|i| self.cap[i] / dt * v[i] + self.g_leak[i] * self.e_leak + current[i])
             .collect();
+        self.solve(dt, &vec![0.0; self.len()], &mut rhs, v);
+    }
+
+    /// Solve `(C/dt + G_leak + G_axial + diag(extra_diag)) out = rhs` in O(n). The matrix is
+    /// symmetric, so the same call also solves adjoint (transposed) systems. `rhs` is overwritten.
+    pub fn solve(&self, dt: f64, extra_diag: &[f64], rhs: &mut [f64], out: &mut [f64]) {
+        let mut diag: Vec<f64> = (0..self.len())
+            .map(|i| self.cap[i] / dt + self.g_leak[i] + extra_diag[i])
+            .collect();
         self.add_axial(&mut diag);
-        self.hines_solve(&mut diag, &mut rhs, v);
+        self.hines_solve(&mut diag, rhs, out);
     }
 
     /// Voltages once transients have died out under constant `current`.

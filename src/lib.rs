@@ -2,6 +2,7 @@
 
 pub mod cable;
 pub mod hh;
+pub mod learn;
 pub mod swc;
 
 #[cfg(feature = "python")]
