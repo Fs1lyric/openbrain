@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: astral-sh/setup-uv@v6
+      - name: Rust format
+        run: cargo fmt --check
+      - name: Rust lint
+        run: cargo clippy --all-targets --features python -- -D warnings
+      - name: Rust tests
+        run: cargo test
+      - name: Build Python package
+        run: uv sync
+      - name: Python lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Python tests
+        run: uv run pytest

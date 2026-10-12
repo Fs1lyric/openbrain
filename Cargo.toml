@@ -1,0 +1,14 @@
+[package]
+name = "openbrain_core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+num-traits = "0.2.19"
+pyo3 = { version = "0.29.3", features = ["extension-module", "abi3-py312"], optional = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+python = ["dep:pyo3"]

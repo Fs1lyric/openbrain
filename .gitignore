@@ -4,3 +4,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 dist/
+
+
+# Added by cargo
+
+/target
+target/
+*.so
