@@ -101,6 +101,15 @@ wheels = [
 ]
 
 [[package]]
+name = "find-libpython"
+version = "0.5.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/60/951b7ca316ab3ec928ed788de5fcb30b4a0292704e50b872c8edf24c11fe/find_libpython-0.5.1.tar.gz", hash = "sha256:12a0fb39ff8dcc64ad0fd554b1bd142ea4a8c4c18e5da6043a547ce7b25559fe", size = 9402, upload-time = "2026-02-11T03:18:04.844Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/34/1f/1d6079f4f0540aaa368aa20d89d98eda42f081c397a822c547340e32d1e3/find_libpython-0.5.1-py3-none-any.whl", hash = "sha256:723a8cfe6fed255a1f58b53c62ed556fb340ec0d456e9863ebc01a5cc047607d", size = 9201, upload-time = "2026-02-11T03:18:03.263Z" },
+]
+
+[[package]]
 name = "fonttools"
 version = "4.66.1"
 source = { registry = "https://pypi.org/simple" }
@@ -338,6 +347,41 @@ wheels = [
 ]
 
 [[package]]
+name = "mpmath"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/47/dd32fa426cc72114383ac549964eecb20ecfd886d1e5ccf5340b55b02f57/mpmath-1.3.0.tar.gz", hash = "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f", size = 508106, upload-time = "2023-03-07T16:47:11.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c", size = 536198, upload-time = "2023-03-07T16:47:09.197Z" },
+]
+
+[[package]]
+name = "neuron"
+version = "9.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "find-libpython" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "setuptools" },
+    { name = "sympy" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3d/78/d2f5159ed14e85ec0765a71ad863eaf16a1c1fd6bf0ea17a49d2a85bfd93/neuron-9.0.2-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:c374ad71a03cfeddb9a8e049c70ff79d1021d83ad028a268ffce653e11b8275d", size = 21927594, upload-time = "2026-08-10T17:18:01.313Z" },
+    { url = "https://files.pythonhosted.org/packages/76/ae/71bdb6607da7f17ef4932349c6758c9c91faff87825227ebb94b5a84bc24/neuron-9.0.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:428e7787f1eebd594105337b4852688e0fba70c47832a3768c0c669134964c16", size = 21409125, upload-time = "2026-08-10T17:18:04.423Z" },
+    { url = "https://files.pythonhosted.org/packages/67/cd/f341059ca6097d17e1887bc70b8202419ee50da19456dff4597e6614b21a/neuron-9.0.2-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c9132866e435f39177a8b02cecd479d54996f7ca0f68488b8a31ab0ef1bf5ad8", size = 17296379, upload-time = "2026-08-10T17:18:07.259Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/62/af8bf44e050a471f7e23f4df6e8d7ce225c680bc31a1cd3740fb444b720c/neuron-9.0.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e696cfcf4a807ba00602f5bca3873a2f09ea8adee148d54afe221ed5ad0163d8", size = 17991206, upload-time = "2026-08-10T17:18:10.16Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/ae/910fe24f5a5c48f5eda35d187b29a7a200eec854591f2140699038b6567f/neuron-9.0.2-cp313-cp313-macosx_10_15_x86_64.whl", hash = "sha256:3fb29d46c5f045afbdd8ad6b54c3d21180f4720265b4b2058b03c4bd4717f703", size = 21974552, upload-time = "2026-08-10T17:18:13.926Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/d0/9929fe92698ea20d6d23def91a2bc0d9f25d90b7d548721978118ab2daee/neuron-9.0.2-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:1c9692beaa120f39a22bc3a3c5c6ba70261e4df9ce74e0be2b5b44859edf2c6c", size = 21434641, upload-time = "2026-08-10T17:18:17.091Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/a9/345289b45d70e49a9d034cfe6f93e669962c94467d6ad192ad63ae065a00/neuron-9.0.2-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:fd6a85e4cad12378a0ffc8a71af32b38aa532b4eb9257cbad1028e24186900f5", size = 17298899, upload-time = "2026-08-10T17:18:20.224Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/ed/69583989cf947dff8382e35c954224b629d9377356f081f768370e8498cd/neuron-9.0.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4ecd6d76042ab3ff506cd06d559e62b00edc305324189c155d69c03daa7cbf75", size = 17999269, upload-time = "2026-08-10T17:18:23.257Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/dc/7087e14f1eac89c5df0375c180064ebb914ed694cf0c326160edee85240b/neuron-9.0.2-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:aa8a5fc7b205a646ef1aaa5e9e28702cf917a4e580d5cb5c35b7622d56776d28", size = 21974490, upload-time = "2026-08-10T17:18:26.39Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/b8/f4b06ed4d50f1f540e5c41fcafe0c32cc81c144b7fbdd1dfb7df298ec73d/neuron-9.0.2-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:276128671a84d7e736af3ced6278eef26d4558648c9ce16c205fd3187c3f45dc", size = 21434526, upload-time = "2026-08-10T17:18:29.56Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/f1/f958516052db998ed1a645afd96785322f56ce78e8e44b405587729c18d7/neuron-9.0.2-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3e3b72a105dd421c64d0ab159040f66d22c1e723144a06e10e6ac4dd30a65661", size = 17300287, upload-time = "2026-08-10T17:18:32.402Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/78/ec68d854c2bfdb01e5aabab042d66295140c5b41722e6d8fa2f4ddd0533d/neuron-9.0.2-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d5bf3c932c21ccc00fca16dad66876daf24cc63a2e3bcdfc59fb04af3f726ff5", size = 17998690, upload-time = "2026-08-10T17:18:35.643Z" },
+]
+
+[[package]]
 name = "numpy"
 version = "2.5.4"
 source = { registry = "https://pypi.org/simple" }
@@ -420,6 +464,9 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+bench = [
+    { name = "neuron" },
+]
 dev = [
     { name = "pytest" },
     { name = "ruff" },
@@ -432,6 +479,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+bench = [{ name = "neuron", specifier = ">=9.0.2" }]
 dev = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = ">=0.17.0" },
@@ -598,10 +646,31 @@ wheels = [
 ]
 
 [[package]]
+name = "setuptools"
+version = "84.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/44/f5da03a8ef95d369145c5bb53050e7877c9f3d312e128605fd9504829143/setuptools-84.0.0.tar.gz", hash = "sha256:f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73", size = 1168449, upload-time = "2026-08-08T18:27:58.365Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/9c/c510029fc6ef33a6275cd2c5d3cecd6613dfd6aa401d57c54f1c18852ccf/setuptools-84.0.0-py3-none-any.whl", hash = "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670", size = 818216, upload-time = "2026-08-08T18:27:56.719Z" },
+]
+
+[[package]]
 name = "six"
 version = "1.17.0"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
+]
+
+[[package]]
+name = "sympy"
+version = "1.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mpmath" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/83/d3/803453b36afefb7c2bb238361cd4ae6125a569b4db67cd9e79846ba2d68c/sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517", size = 7793921, upload-time = "2025-04-27T18:05:01.611Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5", size = 6299353, upload-time = "2025-04-27T18:04:59.103Z" },
 ]

@@ -1,0 +1,128 @@
+{
+  "neuron_version": "9.0.2",
+  "cells": [
+    {
+      "cell": "n419",
+      "openbrain": {
+        "n_compartments": 4229,
+        "soma_area_um2": 518.4247274830741,
+        "total_area_um2": 25069.476375496848,
+        "r_in_mohm": 58.77061111457252,
+        "soma_v_ss_mv": -64.12293888854275,
+        "time_build_s": 0.001682705,
+        "time_steady_s": 5.0074e-05,
+        "time_transient_s": 0.222099745
+      },
+      "neuron_matched": {
+        "n_sections": 4229,
+        "n_segments": 4229,
+        "soma_area_um2": 518.4247274830741,
+        "total_area_um2": 25069.476375496848,
+        "r_in_mohm": 58.77061111464542,
+        "soma_v_ss_mv": -64.12293888853546,
+        "time_steady_s": 0.25207492900017314,
+        "time_transient_s": 0.2359953600002882,
+        "time_build_s": 0.026972536999892327,
+        "rms_transient_vs_openbrain_mv": 1.4359199431616876e-11,
+        "max_abs_transient_vs_openbrain_mv": 1.5305090528272558e-11,
+        "r_in_rel_diff_openbrain_vs_this": -1.2404521854136874e-12
+      },
+      "neuron_import3d": {
+        "n_sections": 164,
+        "n_segments": 780,
+        "soma_area_um2": 134.8699037843034,
+        "total_area_um2": 25350.041872275055,
+        "r_in_mohm": 57.83213412919091,
+        "soma_v_ss_mv": -64.2167865870809,
+        "time_steady_s": 0.006628350000028149,
+        "time_transient_s": 0.045646912999927736,
+        "time_build_s": 0.07744111000010889,
+        "rms_transient_vs_openbrain_mv": 0.08973555596455028,
+        "max_abs_transient_vs_openbrain_mv": 0.093845669022258,
+        "r_in_rel_diff_openbrain_vs_this": 0.01622760424654479
+      }
+    },
+    {
+      "cell": "Ctrl-Cell3-40x",
+      "openbrain": {
+        "n_compartments": 491,
+        "soma_area_um2": 852.3733923266891,
+        "total_area_um2": 6979.054053966029,
+        "r_in_mohm": 148.41048356640357,
+        "soma_v_ss_mv": -55.15895164335964,
+        "time_build_s": 0.000149923,
+        "time_steady_s": 5.14e-06,
+        "time_transient_s": 0.023067447
+      },
+      "neuron_matched": {
+        "n_sections": 491,
+        "n_segments": 491,
+        "soma_area_um2": 852.3733923266891,
+        "total_area_um2": 6979.054053966029,
+        "r_in_mohm": 148.4104835637791,
+        "soma_v_ss_mv": -55.15895164362209,
+        "time_steady_s": 0.004005238999980065,
+        "time_transient_s": 0.02886334499999066,
+        "time_build_s": 0.003254532000028121,
+        "rms_transient_vs_openbrain_mv": 5.058467411268495e-11,
+        "max_abs_transient_vs_openbrain_mv": 5.3660187404602766e-11,
+        "r_in_rel_diff_openbrain_vs_this": 1.768385438083442e-11
+      },
+      "neuron_import3d": {
+        "n_sections": 36,
+        "n_segments": 108,
+        "soma_area_um2": 852.3733712284409,
+        "total_area_um2": 5918.554869880957,
+        "r_in_mohm": 174.8557045444245,
+        "soma_v_ss_mv": -52.51442954555755,
+        "time_steady_s": 0.00033013400025083683,
+        "time_transient_s": 0.007757080999908794,
+        "time_build_s": 0.009657526999944821,
+        "rms_transient_vs_openbrain_mv": 2.442336351514871,
+        "max_abs_transient_vs_openbrain_mv": 2.644404073334094,
+        "r_in_rel_diff_openbrain_vs_this": -0.15124025290980514
+      }
+    },
+    {
+      "cell": "Purkinje-slice-ageP43-6",
+      "openbrain": {
+        "n_compartments": 4156,
+        "soma_area_um2": 1104.3012398208698,
+        "total_area_um2": 27994.750583388588,
+        "r_in_mohm": 51.73336009656467,
+        "soma_v_ss_mv": -64.82666399034353,
+        "time_build_s": 0.001260128,
+        "time_steady_s": 4.0397e-05,
+        "time_transient_s": 0.182302721
+      },
+      "neuron_matched": {
+        "n_sections": 4156,
+        "n_segments": 4156,
+        "soma_area_um2": 1104.3012398208698,
+        "total_area_um2": 27994.750583388584,
+        "r_in_mohm": 51.73336009626099,
+        "soma_v_ss_mv": -64.8266639903739,
+        "time_steady_s": 0.24443128899974909,
+        "time_transient_s": 0.22829325099974085,
+        "time_build_s": 0.025137824000012188,
+        "rms_transient_vs_openbrain_mv": 1.6607096534755446e-11,
+        "max_abs_transient_vs_openbrain_mv": 1.787725523172412e-11,
+        "r_in_rel_diff_openbrain_vs_this": 5.869971175798128e-12
+      },
+      "neuron_import3d": {
+        "n_sections": 758,
+        "n_segments": 764,
+        "soma_area_um2": 1104.3012405398697,
+        "total_area_um2": 27770.069365331256,
+        "r_in_mohm": 49.691628810451874,
+        "soma_v_ss_mv": -65.0308371189548,
+        "time_steady_s": 0.012262153000392573,
+        "time_transient_s": 0.04773550400022941,
+        "time_build_s": 0.09315514699983396,
+        "rms_transient_vs_openbrain_mv": 0.2051318851872767,
+        "max_abs_transient_vs_openbrain_mv": 0.22072142458466715,
+        "r_in_rel_diff_openbrain_vs_this": 0.041088033034718086
+      }
+    }
+  ]
+}
