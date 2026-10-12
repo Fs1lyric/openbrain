@@ -187,7 +187,7 @@ footer a:hover { color: var(--ink); }
   <div>
     <div class="eyebrow">Differentiable neuron simulation · Rust</div>
     <h1>A real neuron, <em>trained by gradient descent.</em></h1>
-    <p class="lede">openbrain simulates reconstructed neurons with the full cable equations and computes exact gradients through them. Here, a rat CA1 pyramidal cell learns XOR in 34 steps and 3 seconds on a laptop CPU. No surrogate network.</p>
+    <p class="lede">openbrain simulates reconstructed neurons with the full cable equations and computes exact gradients through them. On a laptop CPU, a rat CA1 pyramidal cell learns XOR in 34–98 Adam steps (9–23 seconds), trained directly rather than through a surrogate network.</p>
     <div class="cta">
       <a class="btn primary" href="#demo">Try the live neuron</a>
       <a class="btn" href="https://github.com/Fs1lyric/openbrain/blob/main/docs/writeup.md">Read the write-up</a>
@@ -218,9 +218,9 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">01 · Live demo</div>
-        <h2>Zoom in: one real neuron, after training.</h2>
+        <h2>The trained CA1 cell in 3D.</h2>
       </div>
-      <p>Every colour is a simulated membrane voltage, one per compartment. Flip the inputs and watch the trained CA1 cell answer XOR. Drag to rotate.</p>
+      <p>Colour shows the simulated membrane voltage in each compartment. Toggle inputs A and B to see how the cell responds, and drag to rotate.</p>
     </div>
     <div class="stage reveal" id="stage">
     <canvas id="neuron" aria-label="Rotating 3D reconstruction of a CA1 neuron. Membrane voltage is shown as color while the trained cell responds to inputs A and B."></canvas>
@@ -251,9 +251,9 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">02 · Result</div>
-        <h2>One input fires it. Both inputs don’t.</h2>
+        <h2>It responds to one input, not to both.</h2>
       </div>
-      <p>Inputs A and B each drive AMPA, NMDA and GABA<sub>A</sub> synapses at 16 dendritic sites. Gradient descent tunes all 96 weights until the average soma voltage is higher for exactly one input than for none or both. The cell computes XOR. Across six random seeds it takes 34–98 steps and 9–23 CPU-seconds.</p>
+      <p>Inputs A and B each drive AMPA, NMDA and GABA<sub>A</sub> synapses at 16 dendritic sites. Gradient descent tunes all 96 weights until the average soma voltage is higher when exactly one input is active than when none or both are. Over six random seeds, training took 34–98 steps and 9–23 CPU-seconds.</p>
     </div>
     <div class="grid2">
       <div class="card reveal">
@@ -280,9 +280,9 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">03 · Control</div>
-        <h2>Do the dendrites matter? Partly. Here is the honest answer.</h2>
+        <h2>Do the dendrites matter? Partly.</h2>
       </div>
-      <p>I expected a point neuron to fail at XOR. It didn’t: over time, two fast inhibitory dips add up while slower excitation saturates. So the control measures the best margin each configuration reaches in 300 steps, with the same 96 synapses everywhere.</p>
+      <p>I expected a point neuron to fail at XOR, but it doesn’t: over the 60 ms window, two fast inhibitory dips add up while the slower excitation saturates. So instead of pass or fail, the control compares the best margin each configuration reaches in 300 steps, with the same 96 synapses in every case.</p>
     </div>
     <div class="grid2">
       <div class="card reveal">
@@ -292,8 +292,8 @@ footer a:hover { color: var(--ink); }
         <span class="tag">Finding</span>
         <h3>Placement beats the soma control 8 / 8</h3>
         <p>Moving the same synapses onto dendrites always widens the margin over putting them on the soma: 1.27–2.81 mV against 1.19 mV.</p>
-        <p>A single-compartment neuron with the same membrane area reaches 1.65 mV, and 5 of 8 placements beat it. <b style="color:var(--ink);font-weight:500">Where</b> synapses sit matters about as much as having dendrites at all.</p>
-        <p>That is the question the next phase scales up: capacity across 1,000+ real neurons.</p>
+        <p>A single-compartment neuron with the same membrane area reaches 1.65 mV, and 5 of 8 placements beat it. So where the synapses sit matters about as much as whether the cell has dendrites at all.</p>
+        <p>The next phase tests this across 1,000+ real neurons.</p>
       </div>
     </div>
   </div>
@@ -324,7 +324,7 @@ footer a:hover { color: var(--ink); }
           <thead><tr><th>simulator</th><th>forward</th><th>+ gradient</th><th>max error</th></tr></thead>
           <tbody></tbody>
         </table>
-        <p style="margin-top:16px;font-size:13px;color:var(--ink-3)">The gradients agree with Jaxley to 0.2%. NEURON is twice as accurate at equal dt; openbrain applies each input one step early, which is the next fix. Jaxley is built for GPUs, which this CPU test does not cover.</p>
+        <p style="margin-top:16px;font-size:13px;color:var(--ink-3)">The gradients agree with Jaxley to 0.2%. NEURON is twice as accurate at equal dt; openbrain currently applies each input one time step early, and fixing that is next. Jaxley is built for GPUs, and this test ran on CPU only.</p>
       </div>
     </div>
   </div>
@@ -335,9 +335,9 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">05 · Method</div>
-        <h2>Three pieces, all in Rust.</h2>
+        <h2>Cable solver, synapses and gradients, all in Rust.</h2>
       </div>
-      <p>Every piece is held to a test first: published HH behaviour, cable convergence, supralinear NMDA summation, and adjoint gradients against finite differences for every synapse type.</p>
+      <p>Each part was written against a test first: published HH behaviour, cable convergence, supralinear NMDA summation, and adjoint gradients against finite differences for every synapse type.</p>
     </div>
     <div class="steps">
       <div class="card step reveal">
@@ -356,7 +356,7 @@ B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
       <div class="card step reveal">
         <div class="n">03</div>
         <h3>Exact adjoint gradients</h3>
-        <p>The adjoint walks the simulation backwards. The system is symmetric, so each backward step is again one Hines solve: about two simulations’ cost for every weight’s gradient at once.</p>
+        <p>The adjoint runs the simulation backwards in time. Because the system matrix is symmetric, each backward step is another Hines solve, so the gradient for every weight together costs about one extra simulation.</p>
         <code>A(vⁿ) λⁿ = ∂L/∂vⁿ⁺¹ + …
 ∂L/∂w_s = Σₙ λⁿ_c · s(tₙ) · B · (E − vⁿ⁺¹)</code>
       </div>
@@ -369,7 +369,7 @@ B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
     <div class="reveal">
       <div class="eyebrow">06 · Roadmap</div>
       <h2 style="font:500 clamp(30px,3.6vw,44px)/1.08 var(--sans);letter-spacing:-.03em;margin:14px 0 18px">Next: the Neuron Compute Atlas</h2>
-      <p style="color:var(--ink-2);max-width:32em">Measure learning capacity across 1,000+ reconstructed neurons and ask whether dendritic structure predicts it beyond cell size. The closest published study covered 24 cells with about 2.3 GPU-years of compute. Training cells directly makes each one take about a CPU-minute.</p>
+      <p style="color:var(--ink-2);max-width:32em">Measure learning capacity across 1,000+ reconstructed neurons and ask whether dendritic structure predicts it beyond cell size. The closest published study covered 24 cells with about 2.3 GPU-years of compute. Training each cell directly takes about a CPU-minute.</p>
     </div>
     <ol class="reveal">
       <li class="done"><span><b>Hodgkin–Huxley core</b> in Rust with a Python API</span></li>
@@ -387,7 +387,7 @@ B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
   <canvas id="streams" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="eyebrow" style="margin-bottom:18px">Open source · MIT</div>
-    <h2>Every number on this page reproduces from the repo.</h2>
+    <h2>Every number on this page can be reproduced from the repo.</h2>
     <div class="cta" style="justify-content:center;display:flex;gap:12px;flex-wrap:wrap">
       <a class="btn primary" href="https://github.com/Fs1lyric/openbrain">View on GitHub</a>
       <a class="btn" href="https://github.com/Fs1lyric/openbrain/blob/main/docs/writeup.md#reproduce">Reproduce the results</a>
