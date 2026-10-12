@@ -15,6 +15,8 @@ pub enum SynapseKind {
     Ampa,
     Nmda,
     GabaA,
+    /// Current-based synapse: the weight is a peak current in nA, independent of voltage.
+    Current,
 }
 
 impl SynapseKind {
@@ -22,6 +24,7 @@ impl SynapseKind {
         match self {
             Self::Ampa | Self::Nmda => 0.0,
             Self::GabaA => -80.0,
+            Self::Current => 0.0,
         }
     }
 
@@ -115,7 +118,12 @@ impl<'a> Problem<'a> {
             }
             for (s, syn) in self.synapses.iter().enumerate() {
                 let c = syn.compartment;
-                let g = weights[s] * self.drive[s][step] * syn.kind.block(v[c]).0;
+                let input = weights[s] * self.drive[s][step];
+                if syn.kind == SynapseKind::Current {
+                    rhs[c] += input;
+                    continue;
+                }
+                let g = input * syn.kind.block(v[c]).0;
                 extra[c] += g;
                 rhs[c] += g * syn.kind.reversal();
             }
@@ -175,8 +183,10 @@ impl<'a> Problem<'a> {
             let v_next = &traj[(step + 1) * n..(step + 2) * n];
             extra.fill(0.0);
             for (s, syn) in self.synapses.iter().enumerate() {
-                extra[syn.compartment] +=
-                    weights[s] * self.drive[s][step] * syn.kind.block(v[syn.compartment]).0;
+                if syn.kind != SynapseKind::Current {
+                    extra[syn.compartment] +=
+                        weights[s] * self.drive[s][step] * syn.kind.block(v[syn.compartment]).0;
+                }
             }
             rhs.copy_from_slice(&adjoint);
             self.cable
@@ -187,6 +197,10 @@ impl<'a> Problem<'a> {
             }
             for (s, syn) in self.synapses.iter().enumerate() {
                 let c = syn.compartment;
+                if syn.kind == SynapseKind::Current {
+                    grad[s] += mu[c] * self.drive[s][step];
+                    continue;
+                }
                 let (block, d_block) = syn.kind.block(v[c]);
                 let driving_force = syn.kind.reversal() - v_next[c];
                 grad[s] += mu[c] * self.drive[s][step] * block * driving_force;

@@ -138,3 +138,60 @@ fn rejects_synapse_on_missing_compartment() {
     }];
     assert!(Problem::new(&cable, syn, vec![vec![0.0; 10]], 0.1).is_err());
 }
+
+#[test]
+fn current_synapse_matches_direct_current_injection() {
+    let cable = tree();
+    let (dt, steps) = (0.1, 300);
+    let wave = double_exponential(&[20, 90], 1.0, 5.0, dt, steps);
+    let syn = vec![Synapse {
+        compartment: 5,
+        kind: SynapseKind::Current,
+    }];
+    let p = Problem::new(&cable, syn, vec![wave.clone()], dt).unwrap();
+    let trace = p.soma_trace(&[0.03]);
+    let mut v = vec![PASSIVE.e_leak; cable.len()];
+    let mut current = vec![0.0; cable.len()];
+    for (step, &s) in wave.iter().enumerate() {
+        current[5] = 0.03 * s;
+        cable.step(&mut v, &current, dt);
+        assert!((v[0] - trace[step]).abs() < 1e-12, "step {step}");
+    }
+}
+
+#[test]
+fn current_synapse_gradients_match_finite_differences() {
+    let cable = tree();
+    let (dt, steps) = (0.1, 300);
+    let synapses = vec![
+        Synapse {
+            compartment: 7,
+            kind: SynapseKind::Current,
+        },
+        Synapse {
+            compartment: 3,
+            kind: SynapseKind::Nmda,
+        },
+        Synapse {
+            compartment: 5,
+            kind: SynapseKind::Current,
+        },
+    ];
+    let drive = vec![
+        double_exponential(&[20], 1.0, 5.0, dt, steps),
+        double_exponential(&[40], 2.0, 50.0, dt, steps),
+        double_exponential(&[60, 70], 1.0, 5.0, dt, steps),
+    ];
+    let p = Problem::new(&cable, synapses, drive, dt).unwrap();
+    let w = vec![0.02, 0.006, -0.01];
+    let (_, grad) = p.loss_and_grad(&w, loss);
+    for i in 0..w.len() {
+        let h = 1e-7;
+        let (mut up, mut down) = (w.clone(), w.clone());
+        up[i] += h;
+        down[i] -= h;
+        let fd = (p.loss(&up, loss) - p.loss(&down, loss)) / (2.0 * h);
+        let rel = (grad[i] - fd).abs() / fd.abs().max(1e-12);
+        assert!(rel < 1e-6, "weight {i}: adjoint {} vs fd {fd}", grad[i]);
+    }
+}

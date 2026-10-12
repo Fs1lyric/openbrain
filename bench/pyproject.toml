@@ -1,0 +1,9 @@
+[project]
+name = "openbrain-bench"
+version = "0.1.0"
+description = "Speed and accuracy comparison of openbrain against NEURON and Jaxley"
+requires-python = ">=3.12,<3.13"
+dependencies = ["neuron", "jaxley", "numpy", "matplotlib"]
+
+[tool.uv]
+package = false

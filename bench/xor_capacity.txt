@@ -1,0 +1,10 @@
+RESULT mode=tree seed=1 solved_at=none best_gap=1.273 seconds=22.43
+RESULT mode=tree seed=2 solved_at=none best_gap=2.591 seconds=23.35
+RESULT mode=tree seed=3 solved_at=none best_gap=2.808 seconds=22.82
+RESULT mode=tree seed=4 solved_at=none best_gap=1.762 seconds=23.32
+RESULT mode=tree seed=5 solved_at=none best_gap=1.298 seconds=22.68
+RESULT mode=tree seed=6 solved_at=none best_gap=1.938 seconds=22.90
+RESULT mode=tree seed=7 solved_at=none best_gap=2.528 seconds=24.55
+RESULT mode=tree seed=8 solved_at=none best_gap=1.339 seconds=21.97
+RESULT mode=soma seed=1 solved_at=none best_gap=1.194 seconds=22.59
+RESULT mode=point seed=1 solved_at=none best_gap=1.647 seconds=0.36
