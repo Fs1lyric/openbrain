@@ -78,7 +78,8 @@ can take results back to their own tools.
 ## Milestones (each gates the next)
 
 1. **Pilot.** Cable solver + adjoint (matches finite differences to 1e-6); one real neuron learns XOR in
-   under 1 CPU-minute.
+   under 1 CPU-minute. *Passed 2026-10-12:* CA1 cell n419 (4,229 compartments, 96 synapses) solves XOR
+   on seeds 1–6 in 34–98 Adam steps, 9–23 CPU-s each (`cargo run --release --example xor`).
 2. **Perturbation API + interop v1.** SWC, NeuroML import, NeuroMorpho fetcher (with disease metadata),
    drug and channelopathy overrides on multicompartment cells.
 3. **Chemistry core.** Ion concentrations, Nernst, Na⁺/K⁺ pump with ATP, O₂ supply. Validate against

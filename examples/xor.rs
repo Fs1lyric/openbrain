@@ -14,8 +14,10 @@ const WINDOW: std::ops::Range<usize> = 100..600; // score 10-60 ms
 const BURST: [usize; 3] = [100, 120, 140];
 const SITES_PER_INPUT: usize = 8;
 const KINDS: [SynapseKind; 3] = [SynapseKind::Ampa, SynapseKind::Nmda, SynapseKind::GabaA];
-const ON_TARGET: f64 = -60.0;
 const MARGIN: f64 = 1.0; // mV between the lowest XOR-true and highest XOR-false pattern
+const TARGET_GAP: f64 = 3.0; // the loss keeps pushing past MARGIN so the solution is not knife-edge
+const SHARPNESS: f64 = 2.0; // 1/mV, of the softplus pair loss
+const MAX_ITERS: i32 = 1500;
 
 struct Rng(u64);
 impl Rng {
@@ -64,8 +66,9 @@ fn main() {
         SynapseKind::Nmda => double_exponential(&BURST, 2.0, 50.0, DT, STEPS),
         SynapseKind::GabaA => double_exponential(&BURST, 0.5, 8.0, DT, STEPS),
     };
-    let patterns = [(false, false), (true, false), (false, true), (true, true)];
-    let problems: Vec<(Problem, f64)> = patterns
+    // 00 has no input, so a passive cell sits exactly at rest and needs no simulation
+    let patterns = [(true, false), (false, true), (true, true)];
+    let problems: Vec<Problem> = patterns
         .iter()
         .map(|&(a, b)| {
             let drive = synapses
@@ -79,11 +82,7 @@ fn main() {
                     }
                 })
                 .collect();
-            let target = if a ^ b { ON_TARGET } else { passive.e_leak };
-            (
-                Problem::new(&cable, synapses.clone(), drive, DT).unwrap(),
-                target,
-            )
+            Problem::new(&cable, synapses.clone(), drive, DT).unwrap()
         })
         .collect();
 
@@ -94,19 +93,20 @@ fn main() {
     let (lr, b1, b2) = (0.1, 0.9, 0.999);
     let start = Instant::now();
     println!("{} compartments, {} synapses", cable.len(), synapses.len());
-    for iter in 1..=1500 {
+    for iter in 1..=MAX_ITERS {
         let w: Vec<f64> = theta.iter().map(|t| w0 * t.exp()).collect();
         let scale = 1.0 / WINDOW.len() as f64;
+        // each evaluation's "loss" is the pattern's mean soma voltage over WINDOW, and its gradient
+        // is d(mean)/dw; the classification loss below is a function of those means alone
         let evals: Vec<_> = std::thread::scope(|scope| {
             let handles: Vec<_> = problems
                 .iter()
-                .map(|(problem, target)| {
+                .map(|problem| {
                     let w = &w;
                     scope.spawn(move || {
-                        problem.evaluate(w, |k, vs| {
+                        problem.evaluate(w, |k, _| {
                             if WINDOW.contains(&k) {
-                                let e = vs - target;
-                                (scale * e * e, scale * 2.0 * e)
+                                (0.0, scale)
                             } else {
                                 (0.0, 0.0)
                             }
@@ -116,22 +116,39 @@ fn main() {
                 .collect();
             handles.into_iter().map(|h| h.join().unwrap()).collect()
         });
-        let loss: f64 = evals.iter().map(|e| e.loss).sum();
-        let mut grad = vec![0.0; w.len()];
-        for e in &evals {
-            grad.iter_mut().zip(&e.grad).for_each(|(a, b)| *a += b);
+        let mean = |e: &openbrain_core::learn::Evaluation| {
+            e.soma[WINDOW].iter().sum::<f64>() / WINDOW.len() as f64
+        };
+        // means in order [00 10 01 11]
+        let means = [
+            passive.e_leak,
+            mean(&evals[0]),
+            mean(&evals[1]),
+            mean(&evals[2]),
+        ];
+        // softplus pair loss on every (XOR-true, XOR-false) pair: penalise gaps below TARGET_GAP
+        let mut loss = 0.0;
+        let mut d_means = [0.0; 4];
+        for t in [1, 2] {
+            for f in [0, 3] {
+                let z = SHARPNESS * (TARGET_GAP - (means[t] - means[f]));
+                loss += z.max(0.0) + (-z.abs()).exp().ln_1p();
+                let sigmoid = 1.0 / (1.0 + (-z).exp());
+                d_means[t] -= sigmoid * SHARPNESS;
+                d_means[f] += sigmoid * SHARPNESS;
+            }
         }
-        let means: Vec<f64> = evals
-            .iter()
-            .map(|e| e.soma[WINDOW].iter().sum::<f64>() / WINDOW.len() as f64)
-            .collect();
+        let mut grad = vec![0.0; w.len()];
+        for (e, d) in evals.iter().zip(&d_means[1..]) {
+            grad.iter_mut().zip(&e.grad).for_each(|(a, b)| *a += d * b);
+        }
         let lowest_true = means[1].min(means[2]);
         let highest_false = means[0].max(means[3]);
         let gap = lowest_true - highest_false;
-        let correct = if gap >= MARGIN { 4 } else { 3 };
-        if iter % 250 == 0 || correct == 4 {
+        let solved = gap >= MARGIN;
+        if iter % 25 == 0 || solved {
             println!(
-                "iter {iter:3}  loss {loss:8.3}  mean soma mV [00 10 01 11] = {:?}  gap {gap:5.2} mV  {:.1}s",
+                "iter {iter:4}  loss {loss:7.3}  mean soma mV [00 10 01 11] = {:?}  gap {gap:5.2} mV  {:.1}s",
                 means
                     .iter()
                     .map(|x| (x * 10.0).round() / 10.0)
@@ -139,9 +156,9 @@ fn main() {
                 start.elapsed().as_secs_f64()
             );
         }
-        if correct == 4 {
+        if solved {
             println!(
-                "SOLVED XOR in {iter} iterations, {:.1}s",
+                "SOLVED XOR in {iter} iterations, {:.1}s wall",
                 start.elapsed().as_secs_f64()
             );
             return;
@@ -155,7 +172,7 @@ fn main() {
         }
     }
     println!(
-        "NOT solved after 1500 iterations, {:.1}s",
+        "NOT solved after {MAX_ITERS} iterations, {:.1}s wall",
         start.elapsed().as_secs_f64()
     );
 }
