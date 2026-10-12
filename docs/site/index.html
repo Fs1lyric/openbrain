@@ -77,6 +77,14 @@ nav .btn { margin-left: auto; }
 #scope { width: 100%; height: 92px; display: block; margin-top: 10px; }
 .panel .caption { font: 400 11px var(--mono); color: var(--ink-3); margin-top: 4px; display: flex; justify-content: space-between; }
 
+.hud.br { bottom: 18px; right: 8px; }
+.brain-stage { cursor: grab; }
+.brain-stage:active { cursor: grabbing; }
+#brain { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: pan-y; }
+#demo .stage { height: 680px; }
+.band { position: relative; height: 420px; border-top: 1px solid var(--line); overflow: hidden; }
+#band { position: absolute; inset: 0; width: 100%; height: 100%; }
+.band-label { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); font-size: 13px; color: var(--ink-2); letter-spacing: .08em; border: 1px solid var(--line-2); background: color-mix(in srgb, var(--bg) 80%, transparent); padding: 6px 14px; border-radius: 999px; }
 /* sections */
 section.block { padding: 120px 0; border-top: 1px solid var(--line); position: relative; }
 .head { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; margin-bottom: 56px; align-items: end; }
@@ -135,7 +143,7 @@ footer a:hover { color: var(--ink); }
 @media (max-width: 920px) {
   nav .links { display: none; }
   .hero { grid-template-columns: 1fr; padding-top: 90px; min-height: auto; }
-  .stage { height: 620px; }
+  .stage, #demo .stage { height: 560px; }
   .head, .grid2, .next { grid-template-columns: 1fr; gap: 20px; }
   .steps { grid-template-columns: 1fr; }
   section.block { padding: 84px 0; }
@@ -143,7 +151,9 @@ footer a:hover { color: var(--ink); }
 @media (max-width: 560px) {
   .wrap, .hero { padding-left: 16px; padding-right: 16px; }
   .stats { grid-template-columns: repeat(2, auto); gap: 18px; }
-  .stage { height: auto; }
+  .stage, #demo .stage { height: auto; }
+  .brain-stage { height: 420px !important; }
+  .band { height: 300px; }
   #neuron { position: relative; display: block; height: 460px; }
   .hud.tl { display: none; }
   .panel { position: relative; bottom: auto; right: auto; width: auto; margin-top: 8px; }
@@ -163,6 +173,7 @@ footer a:hover { color: var(--ink); }
       openbrain
     </a>
     <div class="links">
+      <a href="#demo">Demo</a>
       <a href="#xor">Results</a>
       <a href="#benchmark">Benchmark</a>
       <a href="#method">Method</a>
@@ -178,7 +189,7 @@ footer a:hover { color: var(--ink); }
     <h1>A real neuron, <em>trained by gradient descent.</em></h1>
     <p class="lede">openbrain simulates reconstructed neurons with the full cable equations and computes exact gradients through them. Here, a rat CA1 pyramidal cell learns XOR in 34 steps and 3 seconds on a laptop CPU. No surrogate network.</p>
     <div class="cta">
-      <a class="btn primary" href="#xor">See the results</a>
+      <a class="btn primary" href="#demo">Try the live neuron</a>
       <a class="btn" href="https://github.com/Fs1lyric/openbrain/blob/main/docs/writeup.md">Read the write-up</a>
     </div>
     <div class="stats">
@@ -188,7 +199,30 @@ footer a:hover { color: var(--ink); }
       <div class="stat"><b data-count="2.4" data-suffix="×">0</b><span>faster gradients than Jaxley</span></div>
     </div>
   </div>
-  <div class="stage" id="stage">
+  <div class="stage brain-stage">
+    <canvas id="brain" aria-label="Point cloud of a human cerebral cortex (FreeSurfer fsaverage). Drag to rotate."></canvas>
+    <div class="hud tl"><div>human cortex · <b>fsaverage6</b></div><div><span id="brain-n">—</span> surface points</div></div>
+    <div class="hud br">drag to rotate ⟲</div>
+  </div>
+</header>
+
+<main>
+
+<section class="band" aria-label="Animation: input bits A and B converge onto one neuron, which outputs A xor B">
+  <canvas id="band"></canvas>
+  <div class="band-label mono"><span id="band-text">A 1 · B 0 → 1</span></div>
+</section>
+
+<section class="block" id="demo">
+  <div class="wrap">
+    <div class="head reveal">
+      <div>
+        <div class="eyebrow">01 · Live demo</div>
+        <h2>Zoom in: one real neuron, after training.</h2>
+      </div>
+      <p>Every colour is a simulated membrane voltage, one per compartment. Flip the inputs and watch the trained CA1 cell answer XOR. Drag to rotate.</p>
+    </div>
+    <div class="stage reveal" id="stage">
     <canvas id="neuron" aria-label="Rotating 3D reconstruction of a CA1 neuron. Membrane voltage is shown as color while the trained cell responds to inputs A and B."></canvas>
     <div class="hud tl">
       <div>NeuroMorpho <b>n419</b> · rat CA1</div>
@@ -210,14 +244,13 @@ footer a:hover { color: var(--ink); }
       <div class="caption"><span>soma voltage, 0–60 ms</span><span id="mean">mean −62.6 mV</span></div>
     </div>
   </div>
-</header>
-
-<main>
+  </div>
+</section>
 <section class="block" id="xor">
   <div class="wrap">
     <div class="head reveal">
       <div>
-        <div class="eyebrow">01 · Result</div>
+        <div class="eyebrow">02 · Result</div>
         <h2>One input fires it. Both inputs don’t.</h2>
       </div>
       <p>Inputs A and B each drive AMPA, NMDA and GABA<sub>A</sub> synapses at 16 dendritic sites. Gradient descent tunes all 96 weights until the average soma voltage is higher for exactly one input than for none or both. The cell computes XOR. Across six random seeds it takes 34–98 steps and 9–23 CPU-seconds.</p>
@@ -246,7 +279,7 @@ footer a:hover { color: var(--ink); }
   <div class="wrap">
     <div class="head reveal">
       <div>
-        <div class="eyebrow">02 · Control</div>
+        <div class="eyebrow">03 · Control</div>
         <h2>Do the dendrites matter? Partly. Here is the honest answer.</h2>
       </div>
       <p>I expected a point neuron to fail at XOR. It didn’t: over time, two fast inhibitory dips add up while slower excitation saturates. So the control measures the best margin each configuration reaches in 300 steps, with the same 96 synapses everywhere.</p>
@@ -270,7 +303,7 @@ footer a:hover { color: var(--ink); }
   <div class="wrap">
     <div class="head reveal">
       <div>
-        <div class="eyebrow">03 · Benchmark</div>
+        <div class="eyebrow">04 · Benchmark</div>
         <h2>Same cell, same inputs, three simulators.</h2>
       </div>
       <p>openbrain’s 4,229 cylinders are exported verbatim into NEURON and Jaxley, then driven by the same current pulses at 16 sites for 60 ms at dt = 0.1 ms. Accuracy is measured against NEURON with 9 segments per cylinder and dt = 0.0025 ms.</p>
@@ -301,7 +334,7 @@ footer a:hover { color: var(--ink); }
   <div class="wrap">
     <div class="head reveal">
       <div>
-        <div class="eyebrow">04 · Method</div>
+        <div class="eyebrow">05 · Method</div>
         <h2>Three pieces, all in Rust.</h2>
       </div>
       <p>Every piece is held to a test first: published HH behaviour, cable convergence, supralinear NMDA summation, and adjoint gradients against finite differences for every synapse type.</p>
@@ -334,7 +367,7 @@ B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
 <section class="block" id="next">
   <div class="wrap next">
     <div class="reveal">
-      <div class="eyebrow">05 · Roadmap</div>
+      <div class="eyebrow">06 · Roadmap</div>
       <h2 style="font:500 clamp(30px,3.6vw,44px)/1.08 var(--sans);letter-spacing:-.03em;margin:14px 0 18px">Next: the Neuron Compute Atlas</h2>
       <p style="color:var(--ink-2);max-width:32em">Measure learning capacity across 1,000+ reconstructed neurons and ask whether dendritic structure predicts it beyond cell size. The closest published study covered 24 cells with about 2.3 GPU-years of compute. Training cells directly makes each one take about a CPU-minute.</p>
     </div>
@@ -366,7 +399,7 @@ B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
 <footer>
   <div class="wrap">
     <span>openbrain · Nabhan Lyric Chowdhury · 2026</span>
-    <span>Morphology: <a href="https://neuromorpho.org">NeuroMorpho.Org</a> n419 · Compared with <a href="https://www.neuron.yale.edu/neuron/">NEURON</a> and <a href="https://github.com/jaxleyverse/jaxley">Jaxley</a></span>
+    <span>Neuron: <a href="https://neuromorpho.org">NeuroMorpho.Org</a> n419 · Cortex: <a href="https://surfer.nmr.mgh.harvard.edu/">FreeSurfer</a> fsaverage6 · Compared with <a href="https://www.neuron.yale.edu/neuron/">NEURON</a> and <a href="https://github.com/jaxleyverse/jaxley">Jaxley</a></span>
   </div>
 </footer>
 
@@ -440,7 +473,184 @@ Promise.all([
   streams();
 });
 
-/* ---------- hero: the neuron ---------- */
+/* ---------- hero: the brain ---------- */
+fetch("brain.bin").then(r => r.arrayBuffer()).then(brain);
+function brain(buf) {
+  const canvas = document.getElementById("brain"), ctx = canvas.getContext("2d");
+  const dv = new DataView(buf), n = dv.getUint32(0, true);
+  const P = new Float32Array(3 * n), col = new Uint8Array(n), phase = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const o = 4 + 8 * i;
+    P[3 * i] = dv.getInt16(o, true) / 10; P[3 * i + 1] = dv.getInt16(o + 2, true) / 10; P[3 * i + 2] = dv.getInt16(o + 4, true) / 10;
+    col[i] = dv.getUint8(o + 6); phase[i] = Math.random() * 6.283;
+  }
+  document.getElementById("brain-n").textContent = n.toLocaleString("en-US");
+  const palette = [[63, 224, 207], [235, 104, 52], [232, 197, 71]];
+  let W, H, dpr;
+  function resize() { dpr = Math.min(devicePixelRatio || 1, 2); const r = canvas.getBoundingClientRect(); W = r.width; H = r.height; canvas.width = W * dpr; canvas.height = H * dpr; }
+  resize(); addEventListener("resize", resize);
+
+  // view: start lateral (looking at the left hemisphere), slightly from above
+  let yaw = 0.2, pitch = 0.12, vy = 0, vp = 0, drag = null, idle = 0;
+  canvas.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY }; vy = vp = 0; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const dx = (e.clientX - drag.x) * 0.006, dy = (e.clientY - drag.y) * 0.006;
+    yaw += dx; pitch = Math.max(-1.3, Math.min(1.3, pitch + dy)); vy = dx; vp = dy;
+    drag = { x: e.clientX, y: e.clientY }; idle = 0;
+  });
+  const end = () => { drag = null; };
+  canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+
+  // three activity fronts drift over the cortex; dots near them brighten
+  const fronts = [0, 1, 2].map(k => ({ a: k * 2.1, b: k * 1.3 + 0.5, s: 0.18 + 0.07 * k }));
+  let visible = true;
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }).observe(canvas);
+  let last = performance.now(), img = null, px32 = null;
+  function frame(now) {
+    const dt = Math.min(50, now - last); last = now;
+    if (visible) {
+      idle += dt;
+      if (!drag) {
+        yaw += vy; pitch += vp; vy *= 0.94; vp *= 0.94;
+        if (!reduce && idle > 1500) yaw += dt * 0.00012;
+      }
+      const t = reduce ? 0 : now / 1000;
+      const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      const scale = Math.min(W / 190, H / 165) * 0.95, ox = W / 2, oy = H / 2;
+      const centres = fronts.map(f => [70 * Math.sin(t * f.s + f.a), 90 * Math.sin(t * f.s * 0.8 + f.b), 55 * Math.cos(t * f.s * 1.1 + f.a)]);
+      // splat dots straight into a pixel buffer with additive blending: fast even without a GPU
+      const pw = canvas.width, ph = canvas.height;
+      if (!img || img.width !== pw || img.height !== ph) { img = ctx.createImageData(pw, ph); px32 = new Uint8ClampedArray(img.data.buffer); }
+      const buf = px32; buf.fill(0);
+      const sc = scale * dpr, cx0 = ox * dpr, cy0 = oy * dpr;
+      for (let i = 0; i < n; i++) {
+        const x = P[3 * i], y = P[3 * i + 1], z = P[3 * i + 2];
+        // yaw about the vertical (z) axis, then pitch about the screen x axis
+        const x1 = x * cy - y * sy, y1 = x * sy + y * cy;
+        const zz = z * cp - x1 * sp, depth = z * sp + x1 * cp;
+        const persp = 1 / (1 - depth * 0.0018);
+        const qx = cx0 + y1 * sc * persp, qy = cy0 - zz * sc * persp;
+        let act = 0;
+        for (let c = 0; c < 3; c++) { const C3 = centres[c], dx = x - C3[0], dy = y - C3[1], dz = z - C3[2]; act += Math.exp(-(dx * dx + dy * dy + dz * dz) / 900); }
+        if (act > 1) act = 1;
+        const f0 = Math.max(0, Math.min(1, (depth + 70) / 140)), front = 0.12 + 0.88 * f0 * f0;
+        const tw = 0.75 + 0.25 * Math.sin(t * 2 + phase[i]);
+        let a = front * tw * (0.8 + 1.1 * act); if (a < 0.05) a = 0.05; if (a > 1) a = 1;
+        const rgb = palette[col[i]], size = Math.max(1, Math.round((1.4 + 1.6 * act) * persp * dpr));
+        const x0 = Math.round(qx - size / 2), y0 = Math.round(qy - size / 2);
+        for (let yy = y0; yy < y0 + size; yy++) {
+          if (yy < 0 || yy >= ph) continue;
+          for (let xx = x0; xx < x0 + size; xx++) {
+            if (xx < 0 || xx >= pw) continue;
+            const o = (yy * pw + xx) * 4;
+            buf[o] += rgb[0] * a; buf[o + 1] += rgb[1] * a; buf[o + 2] += rgb[2] * a; buf[o + 3] = 255;
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- band: bits in, one neuron, XOR out ---------- */
+function band() {
+  const canvas = document.getElementById("band"), ctx = canvas.getContext("2d"), label = document.getElementById("band-text");
+  let W, H, dpr;
+  function resize() { dpr = Math.min(devicePixelRatio || 1, 2); const r = canvas.getBoundingClientRect(); W = r.width; H = r.height; canvas.width = W * dpr; canvas.height = H * dpr; }
+  resize(); addEventListener("resize", resize);
+  let visible = false;
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }).observe(canvas);
+  const patterns = [[1, 0], [0, 1], [1, 1], [0, 0]];
+  const FIBRES = 9, bits = Array.from({ length: 26 }, () => ({ u: Math.random(), v: Math.random(), on: Math.random() < 0.5, life: Math.random() }));
+  function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+  function frame(now) {
+    if (visible || reduce) {
+      const t = reduce ? 2 : now / 1000, cycle = 4.2, pi = Math.floor(t / cycle) % 4, k = (t % cycle) / cycle;
+      const [A, B] = patterns[pi], out = A ^ B;
+      label.textContent = `A ${A} · B ${B} → ${out}`;
+      const sx = W * 0.5, sy = H * 0.5, fanStart = W * 0.3;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+
+      // dashed orbits
+      ctx.setLineDash([2, 6]); ctx.lineWidth = 1; ctx.strokeStyle = rgba("#a3a9ba", 0.28);
+      for (const [r, dir] of [[H * 0.42, 1], [H * 0.18, -1]]) { ctx.lineDashOffset = dir * t * 8; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 7); ctx.stroke(); }
+      ctx.setLineDash([]);
+
+      // input waves: A above, B below, travelling right; dim when the bit is 0
+      const inputs = [[A, C.violet, -1], [B, C.blue, 1]];
+      for (const [on, colr, side] of inputs) {
+        for (let i = 0; i < 70; i++) {
+          const u = ((i / 70) + t * 0.06) % 1, x = u * fanStart;
+          const y = sy + side * H * 0.16 + Math.sin(u * 7 - t * 1.6 + side) * H * 0.12 * (1 - u * 0.4);
+          ctx.fillStyle = rgba(colr, (on ? 0.35 : 0.08) + (on ? 0.6 : 0.1) * u);
+          ctx.beginPath(); ctx.arc(x, y, 1.3 + u * 1.2, 0, 7); ctx.fill();
+        }
+      }
+      // fibres from the wave ends into the soma, with pulses running along active ones
+      for (const [on, colr, side] of inputs) {
+        for (let f = 0; f < FIBRES; f++) {
+          const y0 = sy + side * (H * 0.06 + f * H * 0.022);
+          const c1x = fanStart + (sx - fanStart) * 0.55, c1y = y0, c2x = sx - 40, c2y = sy + side * (6 + f * 1.5);
+          const g = ctx.createLinearGradient(fanStart, 0, sx, 0);
+          g.addColorStop(0, rgba(colr, 0)); g.addColorStop(1, rgba(colr, on ? 0.75 : 0.15));
+          ctx.strokeStyle = g; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(fanStart, y0); ctx.bezierCurveTo(c1x, c1y, c2x, c2y, sx, sy); ctx.stroke();
+          if (on) {
+            const q = (t * 0.7 + f / FIBRES) % 1, m = 1 - q;
+            const px = m * m * m * fanStart + 3 * m * m * q * c1x + 3 * m * q * q * c2x + q * q * q * sx;
+            const py = m * m * m * y0 + 3 * m * m * q * c1y + 3 * m * q * q * c2y + q * q * q * sy;
+            ctx.fillStyle = rgba(colr, 0.9); ctx.beginPath(); ctx.arc(px, py, 1.8, 0, 7); ctx.fill();
+          }
+        }
+      }
+      // dendritic tuft on the right of the soma
+      for (let d = 0; d < 11; d++) {
+        const ang = -1.2 + d * 0.24, len = H * (0.1 + 0.05 * Math.sin(d * 1.7));
+        const ex = sx + Math.cos(ang) * len, ey = sy + Math.sin(ang) * len;
+        ctx.strokeStyle = rgba(C.violet, 0.45); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(sx + len * 0.5, sy + Math.sin(ang) * len * 0.2, ex, ey); ctx.stroke();
+        ctx.fillStyle = rgba(C.violet, 0.8); ctx.beginPath(); ctx.arc(ex, ey, 1.6, 0, 7); ctx.fill();
+      }
+      // output wave: big and bright for 1, flat and dim for 0
+      for (let i = 0; i < 90; i++) {
+        const u = i / 89, x = sx + u * (W - sx);
+        const amp = out ? H * 0.2 * Math.sin(Math.min(1, k * 1.6) * Math.PI / 2) : H * 0.015;
+        const y = sy + Math.sin(u * 9 - t * 2.2) * amp * (1 - u * 0.5);
+        const colr = i % 3 === 0 ? C.blue : C.cyan;
+        ctx.fillStyle = rgba(colr, (out ? 0.25 : 0.08) + (out ? 0.65 : 0.12) * (1 - u));
+        ctx.beginPath(); ctx.arc(x, y, 1.2 + (1 - u) * 1.3, 0, 7); ctx.fill();
+      }
+      // soma
+      const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, 34);
+      glow.addColorStop(0, rgba(C.violet, out ? 0.9 : 0.5)); glow.addColorStop(1, rgba(C.violet, 0));
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sx, sy, 34, 0, 7); ctx.fill();
+      ctx.fillStyle = "#b7aef5"; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, 7); ctx.fill();
+
+      // drifting bit clusters: the current inputs written in binary near each stream
+      ctx.font = "500 11px JetBrains Mono, monospace"; ctx.textAlign = "center";
+      bits.forEach((b, i) => {
+        b.life += 0.004; if (b.life > 1) { b.life = 0; b.u = Math.random(); b.v = Math.random(); }
+        const top = i % 2 === 0, bit = top ? A : B;
+        const x = W * (0.1 + 0.32 * b.u), y = top ? H * (0.08 + 0.2 * b.v) : H * (0.72 + 0.2 * b.v);
+        const a = Math.sin(b.life * Math.PI) * 0.75;
+        ctx.fillStyle = rgba("#eceef4", a);
+        ctx.fillText(String(bit), x, y);
+      });
+      ctx.textAlign = "left";
+      ctx.fillStyle = rgba("#a3a9ba", 0.8);
+      ctx.fillText("input A", 16, H * 0.06 + 4); ctx.fillText("input B", 16, H * 0.94);
+      ctx.textAlign = "right"; ctx.fillText("A xor B", W - 16, sy - H * 0.24);
+    }
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+band();
+
+/* ---------- live demo: the neuron ---------- */
 function neuron(data, movie) {
   const canvas = document.getElementById("neuron"), ctx = canvas.getContext("2d");
   const scope = document.getElementById("scope"), sctx = scope.getContext("2d");
