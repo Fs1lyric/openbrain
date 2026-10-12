@@ -103,7 +103,7 @@ impl<'a> Problem<'a> {
     }
 
     /// Voltages of every compartment at steps 0..=steps, starting from rest, flattened by step.
-    fn trajectory(&self, weights: &[f64]) -> Vec<f64> {
+    pub fn trajectory(&self, weights: &[f64]) -> Vec<f64> {
         let n = self.cable.len();
         let base = self.cable.system_diag(self.dt);
         let mut traj = vec![self.cable.e_leak; (self.steps + 1) * n];

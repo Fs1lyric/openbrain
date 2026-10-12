@@ -6,6 +6,8 @@ A differentiable biophysical neuron simulator with a Rust core and a Python API.
 synapses of real reconstructed neurons by gradient descent, through the full cable equations, and
 checks every model against published results and against NEURON.
 
+**Project page with a live, interactive neuron: https://fs1lyric.github.io/openbrain/**
+
 ![openbrain: a real CA1 neuron learns XOR; dendritic placement beats a soma control; speed against NEURON and Jaxley](docs/hero.png)
 
 - **A real neuron learns XOR in seconds.** A CA1 pyramidal cell from NeuroMorpho (4,229

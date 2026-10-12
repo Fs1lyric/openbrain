@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>openbrain</title>
+<meta name="description" content="A differentiable neuron simulator in Rust. A real CA1 neuron learns XOR by gradient descent through the cable equations, in seconds on a CPU.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #04050a;
+  --bg-2: #0a0c14;
+  --line: #1a1e2b;
+  --line-2: #262b3b;
+  --ink: #eceef4;
+  --ink-2: #a3a9ba;
+  --ink-3: #6b7185;
+  --cyan: #3fe0cf;
+  --blue: #3987e5;
+  --violet: #9085e9;
+  --orange: #d95926;
+  --aqua: #199e70;
+  --rest: #8a90a2;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --sans: "Inter Tight", system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+.mono { font-family: var(--mono); }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); }
+
+/* nav */
+nav { position: fixed; inset: 0 0 auto 0; z-index: 20; backdrop-filter: blur(10px); background: color-mix(in srgb, var(--bg) 70%, transparent); border-bottom: 1px solid transparent; transition: border-color .3s; }
+nav.scrolled { border-bottom-color: var(--line); }
+nav .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
+.logo { display: flex; align-items: center; gap: 10px; font: 600 18px var(--sans); letter-spacing: -.01em; text-decoration: none; }
+.logo svg { width: 22px; height: 22px; }
+nav .links { display: flex; gap: 4px; margin-left: 8px; }
+nav .links a { font-size: 14px; color: var(--ink-2); text-decoration: none; padding: 6px 12px; border-radius: 6px; transition: color .2s, background .2s; }
+nav .links a:hover { color: var(--ink); background: var(--bg-2); }
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 500 14px var(--sans); padding: 9px 16px; border-radius: 8px; text-decoration: none; border: 1px solid var(--line-2); color: var(--ink); background: var(--bg-2); transition: border-color .2s, transform .2s; cursor: pointer; }
+.btn:hover { border-color: var(--ink-3); transform: translateY(-1px); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+nav .btn { margin-left: auto; }
+
+/* hero */
+.hero { position: relative; min-height: min(100vh, 920px); padding-top: 60px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; gap: 24px; max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+.hero h1 { font: 500 clamp(40px, 5.4vw, 68px)/1.02 var(--sans); letter-spacing: -.035em; margin: 18px 0 20px; }
+.hero h1 em { font-style: normal; background: linear-gradient(90deg, var(--cyan), var(--blue) 55%, var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p.lede { color: var(--ink-2); font-size: 18px; max-width: 30em; }
+.hero .cta { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+.stats { display: grid; grid-template-columns: repeat(4, auto); gap: 28px; margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--line); }
+.stat b { display: block; font: 500 26px/1 var(--sans); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat span { font: 400 12px var(--mono); color: var(--ink-3); }
+
+.stage { position: relative; height: min(82vh, 760px); }
+#neuron { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hud { position: absolute; font: 400 12px/1.5 var(--mono); color: var(--ink-3); pointer-events: none; }
+.hud.tl { top: 18px; left: 8px; }
+.hud.tr { top: 18px; right: 8px; text-align: right; }
+.hud b { color: var(--ink); font-weight: 500; }
+.hud .big { font-size: 22px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.panel { position: absolute; right: 0; bottom: 18px; width: min(360px, 92%); background: color-mix(in srgb, var(--bg-2) 80%, transparent); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 12px; }
+.panel .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.switches { display: flex; gap: 8px; }
+.switch { font: 500 12px var(--mono); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--ink-3); cursor: pointer; transition: all .2s; }
+.switch[aria-pressed="true"].a { color: var(--bg); background: var(--blue); border-color: var(--blue); }
+.switch[aria-pressed="true"].b { color: var(--bg); background: var(--violet); border-color: var(--violet); }
+.out { font: 500 12px var(--mono); color: var(--ink-3); }
+.out b { display: inline-block; min-width: 1.6em; text-align: center; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--ink); }
+.out b.on { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+#scope { width: 100%; height: 92px; display: block; margin-top: 10px; }
+.panel .caption { font: 400 11px var(--mono); color: var(--ink-3); margin-top: 4px; display: flex; justify-content: space-between; }
+
+/* sections */
+section.block { padding: 120px 0; border-top: 1px solid var(--line); position: relative; }
+.head { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; margin-bottom: 56px; align-items: end; }
+.head h2 { font: 500 clamp(30px, 3.6vw, 44px)/1.08 var(--sans); letter-spacing: -.03em; margin-top: 14px; }
+.head p { color: var(--ink-2); max-width: 36em; }
+.card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 20px; }
+.note { font-size: 15px; color: var(--ink-2); }
+.note h3 { font: 500 18px var(--sans); color: var(--ink); margin-bottom: 10px; letter-spacing: -.01em; }
+.note p + p { margin-top: 12px; }
+.tag { display: inline-block; font: 500 11px var(--mono); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--ink-2); margin-bottom: 14px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font: 400 12px var(--mono); color: var(--ink-2); margin-bottom: 14px; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+svg.chart text { font: 400 11px var(--mono); fill: var(--ink-3); }
+svg.chart .label { fill: var(--ink-2); }
+svg.chart .value { fill: var(--ink); font-weight: 500; }
+.tip { position: fixed; z-index: 30; pointer-events: none; background: #11141f; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px; font: 400 12px/1.45 var(--mono); color: var(--ink-2); opacity: 0; transition: opacity .12s; white-space: nowrap; }
+.tip b { color: var(--ink); font-weight: 500; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 18px; }
+th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+th { font: 500 11px var(--mono); color: var(--ink-3); text-transform: uppercase; letter-spacing: .08em; }
+th:first-child, td:first-child { text-align: left; }
+td:first-child { color: var(--ink); }
+td { color: var(--ink-2); }
+tr.us td { color: var(--ink); }
+
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.step .n { font: 500 12px var(--mono); color: var(--cyan); }
+.step h3 { font: 500 20px var(--sans); letter-spacing: -.015em; margin: 14px 0 8px; }
+.step p { color: var(--ink-2); font-size: 15px; }
+.step code { display: block; margin-top: 16px; font: 400 12.5px/1.7 var(--mono); color: var(--ink-2); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: pre; }
+.step svg { width: 100%; height: 90px; margin-top: 18px; }
+
+.next { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.next ol { list-style: none; counter-reset: s; }
+.next li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; padding: 14px 0; border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: 15px; }
+.next li::before { content: counter(s, decimal-leading-zero); font: 500 12px var(--mono); color: var(--ink-3); padding-top: 3px; }
+.next li.done { color: var(--ink-3); }
+.next li.done::before { content: "✓"; color: var(--cyan); font-size: 14px; padding-top: 0; }
+.next li b { color: var(--ink); font-weight: 500; }
+
+.closing { text-align: center; padding: 140px 0 120px; border-top: 1px solid var(--line); position: relative; overflow: hidden; }
+.closing h2 { font: 500 clamp(34px, 4.6vw, 58px)/1.05 var(--sans); letter-spacing: -.035em; max-width: 16em; margin: 0 auto 28px; }
+#streams { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .55; }
+.closing .wrap { position: relative; }
+footer { border-top: 1px solid var(--line); padding: 36px 0 48px; color: var(--ink-3); font-size: 13px; }
+footer .wrap { display: flex; gap: 24px; justify-content: space-between; flex-wrap: wrap; }
+footer a { color: var(--ink-2); text-decoration: none; }
+footer a:hover { color: var(--ink); }
+
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .8s ease, transform .8s ease; }
+.reveal.in { opacity: 1; transform: none; }
+
+@media (max-width: 920px) {
+  nav .links { display: none; }
+  .hero { grid-template-columns: 1fr; padding-top: 90px; min-height: auto; }
+  .stage { height: 620px; }
+  .head, .grid2, .next { grid-template-columns: 1fr; gap: 20px; }
+  .steps { grid-template-columns: 1fr; }
+  section.block { padding: 84px 0; }
+}
+@media (max-width: 560px) {
+  .wrap, .hero { padding-left: 16px; padding-right: 16px; }
+  .stats { grid-template-columns: repeat(2, auto); gap: 18px; }
+  .stage { height: auto; }
+  #neuron { position: relative; display: block; height: 460px; }
+  .hud.tl { display: none; }
+  .panel { position: relative; bottom: auto; right: auto; width: auto; margin-top: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="openbrain home">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="#3fe0cf"/><path d="M12 9V2M12 15v7M9.4 10.5 3.5 7M14.6 13.5l5.9 3.5M14.6 10.5 20.5 7M9.4 13.5 3.5 17" stroke="#3987e5" stroke-width="1.6" stroke-linecap="round"/></svg>
+      openbrain
+    </a>
+    <div class="links">
+      <a href="#xor">Results</a>
+      <a href="#benchmark">Benchmark</a>
+      <a href="#method">Method</a>
+      <a href="#next">Roadmap</a>
+    </div>
+    <a class="btn" href="https://github.com/Fs1lyric/openbrain">GitHub <span aria-hidden="true">→</span></a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div>
+    <div class="eyebrow">Differentiable neuron simulation · Rust</div>
+    <h1>A real neuron, <em>trained by gradient descent.</em></h1>
+    <p class="lede">openbrain simulates reconstructed neurons with the full cable equations and computes exact gradients through them. Here, a rat CA1 pyramidal cell learns XOR in 34 steps and 3 seconds on a laptop CPU. No surrogate network.</p>
+    <div class="cta">
+      <a class="btn primary" href="#xor">See the results</a>
+      <a class="btn" href="https://github.com/Fs1lyric/openbrain/blob/main/docs/writeup.md">Read the write-up</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b data-count="4229">0</b><span>compartments</span></div>
+      <div class="stat"><b data-count="96">0</b><span>trained synapses</span></div>
+      <div class="stat"><b data-count="34">0</b><span>Adam steps</span></div>
+      <div class="stat"><b data-count="2.4" data-suffix="×">0</b><span>faster gradients than Jaxley</span></div>
+    </div>
+  </div>
+  <div class="stage" id="stage">
+    <canvas id="neuron" aria-label="Rotating 3D reconstruction of a CA1 neuron. Membrane voltage is shown as color while the trained cell responds to inputs A and B."></canvas>
+    <div class="hud tl">
+      <div>NeuroMorpho <b>n419</b> · rat CA1</div>
+      <div>passive cable · AMPA · NMDA · GABA<sub>A</sub></div>
+    </div>
+    <div class="hud tr">
+      <div>t = <span class="big" id="hud-t">0.0</span> ms</div>
+      <div>soma <b id="hud-v">−70.0</b> mV</div>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <div class="switches" role="group" aria-label="Inputs">
+          <button class="switch a" id="sw-a" aria-pressed="true">input A</button>
+          <button class="switch b" id="sw-b" aria-pressed="false">input B</button>
+        </div>
+        <div class="out">A xor B = <b id="out">1</b></div>
+      </div>
+      <canvas id="scope" aria-label="Soma voltage over time for the selected inputs"></canvas>
+      <div class="caption"><span>soma voltage, 0–60 ms</span><span id="mean">mean −62.6 mV</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="block" id="xor">
+  <div class="wrap">
+    <div class="head reveal">
+      <div>
+        <div class="eyebrow">01 · Result</div>
+        <h2>One input fires it. Both inputs don’t.</h2>
+      </div>
+      <p>Inputs A and B each drive AMPA, NMDA and GABA<sub>A</sub> synapses at 16 dendritic sites. Gradient descent tunes all 96 weights until the average soma voltage is higher for exactly one input than for none or both. The cell computes XOR. Across six random seeds it takes 34–98 steps and 9–23 CPU-seconds.</p>
+    </div>
+    <div class="grid2">
+      <div class="card reveal">
+        <div class="legend">
+          <span><i style="background:var(--blue)"></i>one input (10, 01)</span>
+          <span><i style="background:var(--orange)"></i>both inputs (11)</span>
+          <span><i style="background:var(--rest)"></i>no input (00)</span>
+        </div>
+        <svg class="chart" id="traces" viewBox="0 0 640 340" role="img" aria-label="Soma voltage traces of the trained neuron for the four input patterns"></svg>
+      </div>
+      <div class="card note reveal">
+        <span class="tag">How the readout works</span>
+        <h3>Scored on the mean over 10–60 ms</h3>
+        <p>When only one input fires, the soma depolarises and stays up. When both fire, the trained inhibition of each input lands on the other’s excitation, and the response falls back sooner and dips below rest.</p>
+        <p>The loss is a softplus on every true/false gap, with exact gradients from a discrete adjoint: one backward Hines solve per time step, about the cost of a second simulation.</p>
+        <p class="mono" style="font-size:13px;color:var(--ink-3);margin-top:18px">gap ≥ 1 mV → solved · checked against finite differences to 1e-6</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="control">
+  <div class="wrap">
+    <div class="head reveal">
+      <div>
+        <div class="eyebrow">02 · Control</div>
+        <h2>Do the dendrites matter? Partly. Here is the honest answer.</h2>
+      </div>
+      <p>I expected a point neuron to fail at XOR. It didn’t: over time, two fast inhibitory dips add up while slower excitation saturates. So the control measures the best margin each configuration reaches in 300 steps, with the same 96 synapses everywhere.</p>
+    </div>
+    <div class="grid2">
+      <div class="card reveal">
+        <svg class="chart" id="capacity" viewBox="0 0 640 360" role="img" aria-label="Best XOR margin for eight random dendritic placements, compared with soma-placed and point-neuron controls"></svg>
+      </div>
+      <div class="card note reveal">
+        <span class="tag">Finding</span>
+        <h3>Placement beats the soma control 8 / 8</h3>
+        <p>Moving the same synapses onto dendrites always widens the margin over putting them on the soma: 1.27–2.81 mV against 1.19 mV.</p>
+        <p>A single-compartment neuron with the same membrane area reaches 1.65 mV, and 5 of 8 placements beat it. <b style="color:var(--ink);font-weight:500">Where</b> synapses sit matters about as much as having dendrites at all.</p>
+        <p>That is the question the next phase scales up: capacity across 1,000+ real neurons.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="benchmark">
+  <div class="wrap">
+    <div class="head reveal">
+      <div>
+        <div class="eyebrow">03 · Benchmark</div>
+        <h2>Same cell, same inputs, three simulators.</h2>
+      </div>
+      <p>openbrain’s 4,229 cylinders are exported verbatim into NEURON and Jaxley, then driven by the same current pulses at 16 sites for 60 ms at dt = 0.1 ms. Accuracy is measured against NEURON with 9 segments per cylinder and dt = 0.0025 ms.</p>
+    </div>
+    <div class="grid2">
+      <div class="card reveal">
+        <div class="legend">
+          <span><i style="background:var(--blue)"></i>openbrain</span>
+          <span><i style="background:var(--orange)"></i>NEURON 9.0.2</span>
+          <span><i style="background:var(--aqua)"></i>Jaxley 0.14.0</span>
+        </div>
+        <svg class="chart" id="bench" viewBox="0 0 640 320" role="img" aria-label="Wall time of forward simulation and forward plus gradient for each simulator"></svg>
+      </div>
+      <div class="card note reveal">
+        <span class="tag">CPU · median of 21 runs</span>
+        <h3>1.4× NEURON forward · 2.4× Jaxley gradient</h3>
+        <table id="bench-table">
+          <thead><tr><th>simulator</th><th>forward</th><th>+ gradient</th><th>max error</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p style="margin-top:16px;font-size:13px;color:var(--ink-3)">The gradients agree with Jaxley to 0.2%. NEURON is twice as accurate at equal dt; openbrain applies each input one step early, which is the next fix. Jaxley is built for GPUs, which this CPU test does not cover.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="method">
+  <div class="wrap">
+    <div class="head reveal">
+      <div>
+        <div class="eyebrow">04 · Method</div>
+        <h2>Three pieces, all in Rust.</h2>
+      </div>
+      <p>Every piece is held to a test first: published HH behaviour, cable convergence, supralinear NMDA summation, and adjoint gradients against finite differences for every synapse type.</p>
+    </div>
+    <div class="steps">
+      <div class="card step reveal">
+        <div class="n">01</div>
+        <h3>Cable on a real tree</h3>
+        <p>Each SWC point becomes a cylinder. Backward Euler turns every time step into a tree-structured linear system, solved in O(n) by the Hines method.</p>
+        <svg viewBox="0 0 300 90" aria-hidden="true"><g stroke="#3987e5" stroke-width="2" fill="none" stroke-linecap="round"><path d="M20 70 H120 L170 30 H280"/><path d="M120 70 L170 80 H260"/><path d="M170 30 L210 10"/></g><g fill="#3fe0cf"><circle cx="20" cy="70" r="7"/><circle cx="70" cy="70" r="3"/><circle cx="120" cy="70" r="3"/><circle cx="170" cy="30" r="3"/><circle cx="225" cy="30" r="3"/><circle cx="280" cy="30" r="3"/><circle cx="170" cy="80" r="3"/><circle cx="215" cy="80" r="3"/><circle cx="260" cy="80" r="3"/><circle cx="210" cy="10" r="3"/></g></svg>
+      </div>
+      <div class="card step reveal">
+        <div class="n">02</div>
+        <h3>Conductance synapses</h3>
+        <p>AMPA, NMDA with its Mg²⁺ block, and GABA<sub>A</sub> enter as conductances with double-exponential kinetics. The block uses the previous step’s voltage, so each step stays one linear solve.</p>
+        <code>g(t) = w · s(t) · B(V)
+B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
+      </div>
+      <div class="card step reveal">
+        <div class="n">03</div>
+        <h3>Exact adjoint gradients</h3>
+        <p>The adjoint walks the simulation backwards. The system is symmetric, so each backward step is again one Hines solve: about two simulations’ cost for every weight’s gradient at once.</p>
+        <code>A(vⁿ) λⁿ = ∂L/∂vⁿ⁺¹ + …
+∂L/∂w_s = Σₙ λⁿ_c · s(tₙ) · B · (E − vⁿ⁺¹)</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="next">
+  <div class="wrap next">
+    <div class="reveal">
+      <div class="eyebrow">05 · Roadmap</div>
+      <h2 style="font:500 clamp(30px,3.6vw,44px)/1.08 var(--sans);letter-spacing:-.03em;margin:14px 0 18px">Next: the Neuron Compute Atlas</h2>
+      <p style="color:var(--ink-2);max-width:32em">Measure learning capacity across 1,000+ reconstructed neurons and ask whether dendritic structure predicts it beyond cell size. The closest published study covered 24 cells with about 2.3 GPU-years of compute. Training cells directly makes each one take about a CPU-minute.</p>
+    </div>
+    <ol class="reveal">
+      <li class="done"><span><b>Hodgkin–Huxley core</b> in Rust with a Python API</span></li>
+      <li class="done"><span><b>Cable solver</b> on SWC morphologies (Hines)</span></li>
+      <li class="done"><span><b>Synapses + exact adjoint gradients</b></span></li>
+      <li class="done"><span><b>XOR pilot, controls and benchmark</b></span></li>
+      <li><span><b>Active dendrites</b> and input-timing fix</span></li>
+      <li><span><b>Capacity atlas</b> across 1,000+ NeuroMorpho cells</span></li>
+      <li><span><b>Inverse design:</b> why neurons are shaped the way they are</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="closing">
+  <canvas id="streams" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="eyebrow" style="margin-bottom:18px">Open source · MIT</div>
+    <h2>Every number on this page reproduces from the repo.</h2>
+    <div class="cta" style="justify-content:center;display:flex;gap:12px;flex-wrap:wrap">
+      <a class="btn primary" href="https://github.com/Fs1lyric/openbrain">View on GitHub</a>
+      <a class="btn" href="https://github.com/Fs1lyric/openbrain/blob/main/docs/writeup.md#reproduce">Reproduce the results</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>openbrain · Nabhan Lyric Chowdhury · 2026</span>
+    <span>Morphology: <a href="https://neuromorpho.org">NeuroMorpho.Org</a> n419 · Compared with <a href="https://www.neuron.yale.edu/neuron/">NEURON</a> and <a href="https://github.com/jaxleyverse/jaxley">Jaxley</a></span>
+  </div>
+</footer>
+
+<div class="tip" id="tip"></div>
+
+<script>
+(() => {
+"use strict";
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = { blue: css("--blue"), orange: css("--orange"), aqua: css("--aqua"), rest: css("--rest"),
+  cyan: css("--cyan"), violet: css("--violet"), line: css("--line"), ink3: css("--ink-3") };
+const MOVIE_LO = -72, MOVIE_HI = -30, FRAMES = 120, FRAME_MS = 0.5;
+const fmt = v => (v < 0 ? "−" : "") + Math.abs(v).toFixed(1);
+
+addEventListener("scroll", () => document.getElementById("nav").classList.toggle("scrolled", scrollY > 10), { passive: true });
+
+/* tooltip */
+const tip = document.getElementById("tip");
+function showTip(html, e) { tip.innerHTML = html; tip.style.opacity = 1; moveTip(e); }
+function moveTip(e) {
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+function hideTip() { tip.style.opacity = 0; }
+
+/* reveal + count-up */
+const seen = new IntersectionObserver(entries => entries.forEach(en => {
+  if (!en.isIntersecting) return;
+  en.target.classList.add("in");
+  en.target.dispatchEvent(new Event("reveal"));
+  seen.unobserve(en.target);
+}), { threshold: 0.18 });
+document.querySelectorAll(".reveal").forEach(el => seen.observe(el));
+document.querySelectorAll("[data-count]").forEach(el => {
+  const target = +el.dataset.count, suffix = el.dataset.suffix || "", dec = String(target).includes(".") ? 1 : 0;
+  const t0 = performance.now(), dur = reduce ? 0 : 1400;
+  const tick = now => {
+    const k = dur ? Math.min(1, (now - t0) / dur) : 1, e = 1 - Math.pow(1 - k, 3);
+    el.textContent = (target * e).toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }) + suffix;
+    if (k < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+});
+
+// run fn when the card scrolls into view, or now if it already has (data can arrive late)
+function onReveal(card, fn) {
+  if (card.classList.contains("in")) fn();
+  else card.addEventListener("reveal", fn, { once: true });
+}
+
+const SVG = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(SVG, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+
+Promise.all([
+  fetch("data.json").then(r => r.json()),
+  fetch("voltage.bin").then(r => r.arrayBuffer()),
+]).then(([data, movie]) => {
+  neuron(data, new Uint8Array(movie));
+  traces(data);
+  capacity(data);
+  bench(data);
+  streams();
+});
+
+/* ---------- hero: the neuron ---------- */
+function neuron(data, movie) {
+  const canvas = document.getElementById("neuron"), ctx = canvas.getContext("2d");
+  const scope = document.getElementById("scope"), sctx = scope.getContext("2d");
+  const n = data.parent.length, xyz = data.xyz, parent = data.parent;
+  const siteSet = data.sites;
+  const patterns = { "10": 0, "01": 1, "11": 2 };
+  const traceOf = { "00": data.traces["00"], "10": data.traces["10"], "01": data.traces["01"], "11": data.traces["11"] };
+  const mean = k => { const t = traceOf[k]; let s = 0, c = 0; for (let i = 20; i < 120; i++) { s += t[i]; c++; } return s / c; };
+  const means = { "00": mean("00"), "10": mean("10"), "01": mean("01"), "11": mean("11") };
+  const threshold = (Math.min(means["10"], means["01"]) + Math.max(means["00"], means["11"])) / 2;
+
+  // centre and scale the morphology
+  let min = [1e9, 1e9, 1e9], max = [-1e9, -1e9, -1e9];
+  for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) { min[k] = Math.min(min[k], xyz[3 * i + k]); max[k] = Math.max(max[k], xyz[3 * i + k]); }
+  const mid = [0, 1, 2].map(k => (min[k] + max[k]) / 2), span = Math.max(max[0] - min[0], max[1] - min[1]);
+
+  // colour ramp for voltage: slate at rest, through blue and cyan, to white-hot
+  const BINS = 24, ramp = [];
+  const stops = [[0, [52, 60, 84]], [0.18, [57, 135, 229]], [0.45, [63, 224, 207]], [0.75, [190, 245, 238]], [1, [255, 255, 255]]];
+  for (let b = 0; b < BINS; b++) {
+    const x = b / (BINS - 1);
+    let i = 0; while (i < stops.length - 2 && x > stops[i + 1][0]) i++;
+    const [x0, c0] = stops[i], [x1, c1] = stops[i + 1], f = (x - x0) / (x1 - x0);
+    ramp.push(`rgb(${c0.map((c, j) => Math.round(c + (c1[j] - c) * f)).join(",")})`);
+  }
+  const restByte = Math.round((-70 - MOVIE_LO) / (MOVIE_HI - MOVIE_LO) * 255);
+
+  let W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    const r = canvas.getBoundingClientRect(); W = r.width; H = r.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const s = scope.getBoundingClientRect();
+    scope.width = s.width * dpr; scope.height = s.height * dpr;
+  }
+  resize(); addEventListener("resize", resize);
+
+  const proj = new Float32Array(2 * n), depth = new Float32Array(n);
+  let angle = 0.6, dragging = false, lastX = 0, spin = 1;
+  canvas.addEventListener("pointerdown", e => { dragging = true; lastX = e.clientX; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointermove", e => { if (dragging) { angle += (e.clientX - lastX) * 0.008; lastX = e.clientX; } });
+  canvas.addEventListener("pointerup", () => { dragging = false; });
+  canvas.style.cursor = "grab";
+
+  // input particles: A streams in from the left, B from the right, during the burst (10-14 ms)
+  const particles = [];
+  function spawn(input) {
+    for (const s of siteSet) {
+      if (Math.random() < 0.55) particles.push({ input, site: s, k: -Math.random() * 0.5, side: input === "A" ? -1 : 1, lane: Math.random() * 2 - 1 });
+    }
+  }
+
+  let state = { a: true, b: false }, auto = !reduce, autoIndex = 0;
+  const autoOrder = [{ a: true, b: false }, { a: false, b: true }, { a: true, b: true }, { a: false, b: false }];
+  const key = () => (state.a ? "1" : "0") + (state.b ? "1" : "0");
+  const swA = document.getElementById("sw-a"), swB = document.getElementById("sw-b");
+  function setState(s, fromUser) {
+    state = s; frame = 0; spawned = false;
+    if (fromUser) auto = false;
+    swA.setAttribute("aria-pressed", s.a); swB.setAttribute("aria-pressed", s.b);
+    const k = key(), on = means[k] > threshold;
+    const out = document.getElementById("out");
+    out.textContent = on ? "1" : "0"; out.classList.toggle("on", on);
+    document.getElementById("mean").textContent = "mean " + fmt(means[k]) + " mV";
+  }
+  swA.onclick = () => setState({ a: !state.a, b: state.b }, true);
+  swB.onclick = () => setState({ a: state.a, b: !state.b }, true);
+
+  let frame = 0, hold = 0, spawned = false, last = performance.now();
+  const FRAME_TIME = 34; // ms of wall time per movie frame (0.5 ms simulated)
+  let acc = 0;
+  setState(state, false);
+
+  function draw(now) {
+    const dt = Math.min(80, now - last); last = now;
+    if (!dragging && !reduce) angle += dt * 0.00012 * spin;
+    acc += dt;
+    while (acc >= FRAME_TIME) {
+      acc -= FRAME_TIME;
+      if (frame < FRAMES - 1) frame++;
+      else if (++hold > 26) {
+        hold = 0;
+        if (auto) { autoIndex = (autoIndex + 1) % autoOrder.length; setState(autoOrder[autoIndex], false); }
+        else { frame = 0; spawned = false; }
+      }
+    }
+    if (reduce) frame = 40;
+    const k = key();
+    if (!spawned && frame >= 14) { spawned = true; if (state.a) spawn("A"); if (state.b) spawn("B"); }
+
+    // project
+    const ca = Math.cos(angle), sa = Math.sin(angle), scale = Math.min(W * 0.95, H * 0.95) / span;
+    const cx = W * 0.5, cy = H * 0.5;
+    for (let i = 0; i < n; i++) {
+      const x = xyz[3 * i] - mid[0], y = xyz[3 * i + 1] - mid[1], z = xyz[3 * i + 2] - mid[2];
+      const rx = x * ca + z * sa, rz = -x * sa + z * ca;
+      const persp = 1 / (1 + rz * 0.0009);
+      proj[2 * i] = cx + rx * scale * persp;
+      proj[2 * i + 1] = cy - y * scale * persp;
+      depth[i] = rz;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    // voltages for this frame
+    const p = patterns[k];
+    const base = p === undefined ? -1 : (p * FRAMES + frame) * n;
+    const byteAt = i => base < 0 ? restByte : movie[base + i];
+
+    // segments, batched by colour bin
+    const paths = Array.from({ length: BINS }, () => new Path2D());
+    const hot = new Path2D();
+    for (let i = 1; i < n; i++) {
+      const q = parent[i]; if (q < 0) continue;
+      const b = byteAt(i), bin = Math.min(BINS - 1, Math.floor(b / 256 * BINS));
+      paths[bin].moveTo(proj[2 * q], proj[2 * q + 1]);
+      paths[bin].lineTo(proj[2 * i], proj[2 * i + 1]);
+      if (b > 70) { hot.moveTo(proj[2 * q], proj[2 * q + 1]); hot.lineTo(proj[2 * i], proj[2 * i + 1]); }
+    }
+    ctx.lineCap = "round";
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineWidth = 6; ctx.strokeStyle = "rgba(63,224,207,0.07)"; ctx.stroke(hot);
+    ctx.lineWidth = 1.1;
+    for (let b = 0; b < BINS; b++) { ctx.strokeStyle = ramp[b]; ctx.globalAlpha = 0.55 + 0.45 * b / BINS; ctx.stroke(paths[b]); }
+    ctx.globalAlpha = 1;
+
+    // soma glow
+    const sb = byteAt(0) / 255;
+    const g = ctx.createRadialGradient(proj[0], proj[1], 0, proj[0], proj[1], 26 + 40 * sb);
+    g.addColorStop(0, `rgba(63,224,207,${0.35 + 0.5 * sb})`); g.addColorStop(1, "rgba(63,224,207,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(proj[0], proj[1], 26 + 40 * sb, 0, 7); ctx.fill();
+
+    // synapse sites
+    for (const s of siteSet) {
+      const lit = (state.a || state.b) && frame > 18 && frame < 60;
+      ctx.fillStyle = lit ? "#ffffff" : "rgba(160,170,200,0.55)";
+      ctx.beginPath(); ctx.arc(proj[2 * s], proj[2 * s + 1], lit ? 2.6 : 1.8, 0, 7); ctx.fill();
+    }
+
+    // particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const pt = particles[i];
+      pt.k += dt / 900;
+      if (pt.k > 1) { particles.splice(i, 1); continue; }
+      if (pt.k < 0) continue;
+      const tx = proj[2 * pt.site], ty = proj[2 * pt.site + 1];
+      const sx = pt.side < 0 ? -20 : W + 20, sy = H * (0.5 + pt.lane * 0.42);
+      const e = pt.k * pt.k * (3 - 2 * pt.k);
+      const mx = (sx + tx) / 2, my = sy + (ty - sy) * 0.2;
+      const x = (1 - e) * (1 - e) * sx + 2 * (1 - e) * e * mx + e * e * tx;
+      const y = (1 - e) * (1 - e) * sy + 2 * (1 - e) * e * my + e * e * ty;
+      ctx.fillStyle = pt.input === "A" ? C.blue : C.violet;
+      ctx.globalAlpha = 0.25 + 0.75 * e;
+      ctx.beginPath(); ctx.arc(x, y, 1.6, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+
+    // HUD
+    const tr = traceOf[k], v = tr[Math.min(frame, tr.length - 1)];
+    document.getElementById("hud-t").textContent = (frame * FRAME_MS).toFixed(1);
+    document.getElementById("hud-v").textContent = fmt(v);
+    drawScope(k, frame);
+    requestAnimationFrame(draw);
+  }
+
+  function drawScope(k, f) {
+    const w = scope.width / dpr, h = scope.height / dpr;
+    sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sctx.clearRect(0, 0, w, h);
+    const lo = -71.5, hi = -53.5, X = i => i / (FRAMES - 1) * w, Y = v => h - (v - lo) / (hi - lo) * h;
+    sctx.fillStyle = "rgba(255,255,255,0.03)"; sctx.fillRect(X(20), 0, X(119) - X(20), h);
+    sctx.strokeStyle = C.line; sctx.lineWidth = 1; sctx.setLineDash([2, 3]);
+    sctx.beginPath(); sctx.moveTo(0, Y(-70)); sctx.lineTo(w, Y(-70)); sctx.stroke(); sctx.setLineDash([]);
+    for (const other of ["10", "11"]) {
+      if (other === k || (other === "10" && k === "01")) continue;
+      sctx.strokeStyle = "rgba(160,170,200,0.18)"; sctx.lineWidth = 1.2; sctx.beginPath();
+      traceOf[other].forEach((v, i) => i ? sctx.lineTo(X(i), Y(v)) : sctx.moveTo(X(i), Y(v))); sctx.stroke();
+    }
+    const col = k === "11" ? C.orange : k === "00" ? C.rest : C.blue;
+    sctx.strokeStyle = col; sctx.lineWidth = 2; sctx.beginPath();
+    const tr = traceOf[k];
+    for (let i = 0; i <= f; i++) i ? sctx.lineTo(X(i), Y(tr[i])) : sctx.moveTo(X(i), Y(tr[i]));
+    sctx.stroke();
+    sctx.fillStyle = col; sctx.beginPath(); sctx.arc(X(f), Y(tr[f]), 3, 0, 7); sctx.fill();
+  }
+  requestAnimationFrame(draw);
+}
+
+/* ---------- traces chart ---------- */
+function traces(data) {
+  const svg = document.getElementById("traces");
+  const W = 640, H = 340, m = { l: 48, r: 128, t: 12, b: 36 };
+  const n = data.traces["10"].length, dt = data.dt_frame;
+  const x = i => m.l + (i / (n - 1)) * (W - m.l - m.r);
+  const lo = -71.5, hi = -53.5, y = v => m.t + (hi - v) / (hi - lo) * (H - m.t - m.b);
+  el("rect", { x: x(20), y: m.t, width: x(119) - x(20), height: H - m.t - m.b, fill: "rgba(255,255,255,0.025)" }, svg);
+  for (let v = -70; v <= -55; v += 5) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: C.line }, svg);
+    el("text", { x: m.l - 10, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = v;
+  }
+  for (let t = 0; t <= 60; t += 10) el("text", { x: x(t / dt), y: H - 12, "text-anchor": "middle" }, svg).textContent = t;
+  el("text", { x: m.l + 6, y: m.t + 14 }, svg).textContent = "soma mV vs time (ms) · shaded = scored window";
+  const series = [["00", C.rest, "no input"], ["11", C.orange, "both inputs"], ["10", C.blue, "one input"]];
+  const paths = [];
+  for (const [k, col, label] of series) {
+    const d = data.traces[k].map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + "," + y(v).toFixed(1)).join("");
+    const p = el("path", { d, fill: "none", stroke: col, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+    paths.push(p);
+    const last = data.traces[k][n - 1];
+    const dy = { "00": 12, "11": -8, "10": 6 }[k];
+    el("text", { x: W - m.r + 10, y: y(last) + dy, class: "label" }, svg).textContent = label;
+  }
+  // draw-on animation
+  const card = svg.closest(".reveal");
+  paths.forEach(p => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = reduce ? 0 : L; });
+  onReveal(card, () => requestAnimationFrame(() => paths.forEach((p, i) => { p.style.transition = `stroke-dashoffset 1.8s ${0.15 * i}s ease-out`; p.style.strokeDashoffset = 0; })));
+  // crosshair
+  const cross = el("line", { y1: m.t, y2: H - m.b, stroke: C.ink3, "stroke-dasharray": "2 3", opacity: 0 }, svg);
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+  hit.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W;
+    const i = Math.max(0, Math.min(n - 1, Math.round((px - m.l) / (W - m.l - m.r) * (n - 1))));
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("opacity", 1);
+    showTip(`<b>${(i * dt).toFixed(1)} ms</b><br>one input  ${fmt(data.traces["10"][i])} mV<br>both       ${fmt(data.traces["11"][i])} mV<br>none       ${fmt(data.traces["00"][i])} mV`, e);
+  });
+  hit.addEventListener("pointerleave", () => { cross.setAttribute("opacity", 0); hideTip(); });
+}
+
+/* ---------- capacity chart ---------- */
+function capacity(data) {
+  const svg = document.getElementById("capacity");
+  const W = 640, H = 360, m = { l: 92, r: 24, t: 54, b: 40 };
+  const tree = data.capacity.filter(c => c.mode === "tree").sort((a, b) => a.gap - b.gap);
+  const soma = data.capacity.find(c => c.mode === "soma").gap, point = data.capacity.find(c => c.mode === "point").gap;
+  const xmax = 3.0, x = v => m.l + v / xmax * (W - m.l - m.r);
+  const row = (H - m.t - m.b) / tree.length, y = i => H - m.b - row * (i + 0.5);
+  for (let v = 0; v <= 3; v += 0.5) {
+    el("line", { x1: x(v), x2: x(v), y1: m.t - 8, y2: H - m.b, stroke: C.line }, svg);
+    el("text", { x: x(v), y: H - m.b + 18, "text-anchor": "middle" }, svg).textContent = v.toFixed(1);
+  }
+  el("text", { x: W - m.r, y: H - 6, "text-anchor": "end" }, svg).textContent = "best XOR margin after 300 steps (mV)";
+  for (const [v, label, anchor] of [[soma, "on soma", "end"], [point, "point neuron", "start"]]) {
+    el("line", { x1: x(v), x2: x(v), y1: m.t - 26, y2: H - m.b, stroke: "#c3c2b7", "stroke-dasharray": "3 4", opacity: 0.7 }, svg);
+    el("text", { x: x(v) + (anchor === "end" ? -6 : 6), y: m.t - 30, "text-anchor": anchor, class: "label" }, svg).textContent = `${label} ${v.toFixed(2)}`;
+  }
+  const bars = [];
+  tree.forEach((c, i) => {
+    const g = el("g", {}, svg);
+    el("text", { x: m.l - 12, y: y(i) + 4, "text-anchor": "end" }, g).textContent = `placement ${c.seed}`;
+    const line = el("line", { x1: x(0), x2: x(0), y1: y(i), y2: y(i), stroke: C.blue, "stroke-width": 2, "stroke-linecap": "round" }, g);
+    const dot = el("circle", { cx: x(0), cy: y(i), r: 5, fill: C.blue, stroke: "#0a0c14", "stroke-width": 2 }, g);
+    bars.push([line, dot, x(c.gap)]);
+    const hit = el("rect", { x: 0, y: y(i) - row / 2, width: W, height: row, fill: "transparent" }, g);
+    hit.addEventListener("pointermove", e => showTip(`<b>placement ${c.seed}</b><br>${c.gap.toFixed(2)} mV<br>${(c.gap / soma).toFixed(2)}× soma · ${(c.gap / point).toFixed(2)}× point`, e));
+    hit.addEventListener("pointerleave", hideTip);
+  });
+  const grow = () => bars.forEach(([line, dot, to], i) => {
+    const t0 = performance.now(), d = reduce ? 0 : 900, delay = reduce ? 0 : i * 70;
+    const tick = now => {
+      const k = d ? Math.max(0, Math.min(1, (now - t0 - delay) / d)) : 1, e = 1 - Math.pow(1 - k, 3), v = x(0) + (to - x(0)) * e;
+      line.setAttribute("x2", v); dot.setAttribute("cx", v);
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  onReveal(svg.closest(".reveal"), grow);
+}
+
+/* ---------- benchmark chart + table ---------- */
+function bench(data) {
+  const svg = document.getElementById("bench");
+  const W = 640, H = 320, m = { l: 44, r: 16, t: 20, b: 40 };
+  const cols = [C.blue, C.orange, C.aqua], ymax = 200, y = v => H - m.b - v / ymax * (H - m.t - m.b);
+  for (let v = 0; v <= ymax; v += 50) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: C.line }, svg);
+    el("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = v;
+  }
+  el("text", { x: m.l, y: m.t - 6 }, svg).textContent = "wall time, ms";
+  const groups = [["forward", "forward"], ["forward + gradient", "gradient"]];
+  const gw = (W - m.l - m.r) / 2, bw = 64, gap = 10;
+  const rects = [];
+  groups.forEach(([label, key], g) => {
+    const gx = m.l + gw * g + gw / 2;
+    el("text", { x: gx, y: H - 14, "text-anchor": "middle", class: "label" }, svg).textContent = label;
+    data.bench.forEach((b, k) => {
+      const bx = gx + (k - 1) * (bw + gap) - bw / 2, v = b[key];
+      if (v == null) {
+        el("text", { x: bx + bw / 2, y: y(0) - 10, "text-anchor": "middle" }, svg).textContent = "no grads";
+        return;
+      }
+      const r = el("rect", { x: bx, y: y(0), width: bw, height: 0, rx: 4, fill: cols[k] }, svg);
+      const t = el("text", { x: bx + bw / 2, y: y(v) - 8, "text-anchor": "middle", class: "value", opacity: 0 }, svg);
+      t.textContent = Math.round(v);
+      rects.push([r, t, v]);
+      r.addEventListener("pointermove", e => showTip(`<b>${b.name}</b><br>${label}: ${v.toFixed(1)} ms`, e));
+      r.addEventListener("pointerleave", hideTip);
+    });
+  });
+  el("line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), stroke: "#3a4052" }, svg);
+  const grow = () => rects.forEach(([r, t, v], i) => {
+    const t0 = performance.now(), d = reduce ? 0 : 900, delay = reduce ? 0 : i * 90;
+    const tick = now => {
+      const k = d ? Math.max(0, Math.min(1, (now - t0 - delay) / d)) : 1, e = 1 - Math.pow(1 - k, 3);
+      r.setAttribute("y", y(v * e)); r.setAttribute("height", y(0) - y(v * e));
+      t.setAttribute("opacity", k > 0.9 ? 1 : 0);
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  onReveal(svg.closest(".reveal"), grow);
+  const tbody = document.querySelector("#bench-table tbody");
+  data.bench.forEach((b, k) => {
+    const tr = document.createElement("tr"); if (k === 0) tr.className = "us";
+    tr.innerHTML = `<td>${b.name}</td><td>${b.forward.toFixed(0)} ms</td><td>${b.gradient == null ? "—" : b.gradient.toFixed(0) + " ms"}</td><td>${b.err.toFixed(0)} µV</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------- closing: spike streams ---------- */
+function streams() {
+  const canvas = document.getElementById("streams"), ctx = canvas.getContext("2d");
+  let W, H, dpr;
+  const lines = Array.from({ length: 7 }, (_, i) => ({ phase: Math.random() * 6, amp: 0.08 + Math.random() * 0.12, y: 0.2 + i * 0.1, col: [C.cyan, C.blue, C.violet][i % 3] }));
+  function resize() { dpr = Math.min(devicePixelRatio || 1, 2); const r = canvas.getBoundingClientRect(); W = r.width; H = r.height; canvas.width = W * dpr; canvas.height = H * dpr; }
+  resize(); addEventListener("resize", resize);
+  let visible = false;
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }).observe(canvas);
+  function draw(now) {
+    if (visible || reduce) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+      const t = reduce ? 0 : now / 1000;
+      for (const l of lines) {
+        ctx.fillStyle = l.col;
+        for (let i = 0; i < 90; i++) {
+          const u = i / 89, x = u * W;
+          const env = Math.exp(-Math.pow((u - ((t * 0.08 + l.phase) % 1.4 - 0.2)) / 0.18, 2));
+          const y = H * (l.y + l.amp * Math.sin(u * 6 + l.phase + t * 0.6) * 0.5 - env * 0.08);
+          ctx.globalAlpha = 0.18 + 0.7 * env;
+          ctx.beginPath(); ctx.arc(x, y, 1.2 + env * 1.4, 0, 7); ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (!reduce) requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+})();
+</script>
+</body>
+</html>

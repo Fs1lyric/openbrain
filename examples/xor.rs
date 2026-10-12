@@ -14,6 +14,7 @@ use openbrain_core::swc;
 use openbrain_core::xor::{self, Config};
 
 const SITES: usize = 16;
+const MOVIE_RANGE: (f64, f64) = (-72.0, -30.0);
 /// The first SWC points of a NeuroMorpho cell describe the soma; dendritic sites come after them.
 const SOMA_POINTS: usize = 14;
 pub const PASSIVE: Passive = Passive {
@@ -94,6 +95,30 @@ fn main() {
         result.solved_at.map_or("none".into(), |i| i.to_string()),
         result.best_gap
     );
+    if let Some(movie) = args
+        .iter()
+        .position(|a| a == "--movie")
+        .map(|i| &args[i + 1])
+    {
+        // every compartment's voltage for patterns 10, 01, 11, every 5th step, as u8 over
+        // MOVIE_RANGE mV: the frames the project page animates
+        let problems = xor::problems(cable, &sites);
+        let mut bytes = Vec::new();
+        let (mut lo, mut hi) = (f64::MAX, f64::MIN);
+        for p in &problems {
+            let traj = p.trajectory(&result.weights);
+            for frame in traj.chunks(cable.len()).step_by(5).take(xor::STEPS / 5) {
+                for &v in frame {
+                    lo = lo.min(v);
+                    hi = hi.max(v);
+                    let x = (v - MOVIE_RANGE.0) / (MOVIE_RANGE.1 - MOVIE_RANGE.0);
+                    bytes.push((x.clamp(0.0, 1.0) * 255.0).round() as u8);
+                }
+            }
+        }
+        std::fs::write(movie, bytes).expect("write --movie");
+        println!("movie: voltages span {lo:.1} to {hi:.1} mV");
+    }
     if let Some(out) = out {
         // soma traces of all four patterns with the trained weights, for plotting
         let problems = xor::problems(cable, &sites);
