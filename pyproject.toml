@@ -23,6 +23,9 @@ module-name = "openbrain._core"
 features = ["python"]
 
 [dependency-groups]
+bench = [
+    "neuron>=9.0.2",
+]
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.17.0",

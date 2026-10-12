@@ -11,3 +11,6 @@ dist/
 /target
 target/
 *.so
+
+# NeuroMorpho downloads for bench/ (untrusted, not redistributed)
+bench/data/

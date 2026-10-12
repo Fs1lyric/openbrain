@@ -45,7 +45,7 @@ import numpy as np
 from openbrain import HHNeuron
 
 control = HHNeuron().simulate(np.full(10_000, 10.0), dt=0.01)  # 100 ms at 10 µA/cm²
-ttx = HHNeuron(g_na=0.0).simulate(np.full(10_000, 10.0))     # sodium channels blocked
+ttx = HHNeuron(g_na=0.0).simulate(np.full(10_000, 10.0))  # sodium channels blocked
 print(control.spike_times, ttx.spike_times)
 ```
 
