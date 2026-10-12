@@ -119,6 +119,7 @@ fn swc_rejects_unknown_parent() {
     assert!(swc::parse("1 1 0 0 0 5 -1\n2 3 1 0 0 1 7\n").is_err());
 }
 
+#[allow(clippy::needless_range_loop)] // textbook Gaussian elimination reads clearer with indices
 fn dense_solve(mut a: Vec<Vec<f64>>, mut b: Vec<f64>) -> Vec<f64> {
     let n = b.len();
     for col in 0..n {

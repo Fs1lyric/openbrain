@@ -9,7 +9,6 @@ use crate::cable::Geometry;
 
 struct Point {
     xyz: [f64; 3],
-    radius: f64,
 }
 
 pub fn parse(text: &str) -> Result<Geometry, String> {
@@ -34,10 +33,7 @@ pub fn parse(text: &str) -> Result<Geometry, String> {
         let [id, _kind, x, y, z, radius, parent] = fields[..] else {
             return Err(format!("line {}: expected 7 fields", line_no + 1));
         };
-        let point = Point {
-            xyz: [x, y, z],
-            radius,
-        };
+        let point = Point { xyz: [x, y, z] };
         let parent_idx = if parent < 0.0 {
             if !points.is_empty() {
                 return Err(format!("line {}: more than one root", line_no + 1));
