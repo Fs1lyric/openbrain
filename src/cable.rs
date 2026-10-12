@@ -82,11 +82,33 @@ impl Cable {
     /// Solve `(C/dt + G_leak + G_axial + diag(extra_diag)) out = rhs` in O(n). The matrix is
     /// symmetric, so the same call also solves adjoint (transposed) systems. `rhs` is overwritten.
     pub fn solve(&self, dt: f64, extra_diag: &[f64], rhs: &mut [f64], out: &mut [f64]) {
+        let base = self.system_diag(dt);
+        let mut scratch = vec![0.0; self.len()];
+        self.solve_prepared(&base, extra_diag, rhs, out, &mut scratch);
+    }
+
+    /// The diagonal `C/dt + G_leak + G_axial`, which stays fixed while `dt` does.
+    pub fn system_diag(&self, dt: f64) -> Vec<f64> {
         let mut diag: Vec<f64> = (0..self.len())
-            .map(|i| self.cap[i] / dt + self.g_leak[i] + extra_diag[i])
+            .map(|i| self.cap[i] / dt + self.g_leak[i])
             .collect();
         self.add_axial(&mut diag);
-        self.hines_solve(&mut diag, rhs, out);
+        diag
+    }
+
+    /// `solve` without allocating: `base` from `system_diag`, `scratch` of length `len()`.
+    pub fn solve_prepared(
+        &self,
+        base: &[f64],
+        extra_diag: &[f64],
+        rhs: &mut [f64],
+        out: &mut [f64],
+        scratch: &mut [f64],
+    ) {
+        for i in 0..self.len() {
+            scratch[i] = base[i] + extra_diag[i];
+        }
+        self.hines_solve(scratch, rhs, out);
     }
 
     /// Voltages once transients have died out under constant `current`.

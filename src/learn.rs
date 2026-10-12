@@ -99,15 +99,15 @@ impl<'a> Problem<'a> {
         })
     }
 
-    /// Voltages of every compartment at steps 0..=steps, starting from rest.
-    fn trajectory(&self, weights: &[f64]) -> Vec<Vec<f64>> {
+    /// Voltages of every compartment at steps 0..=steps, starting from rest, flattened by step.
+    fn trajectory(&self, weights: &[f64]) -> Vec<f64> {
         let n = self.cable.len();
-        let mut traj = Vec::with_capacity(self.steps + 1);
-        traj.push(vec![self.cable.e_leak; n]);
-        let mut extra = vec![0.0; n];
-        let mut rhs = vec![0.0; n];
+        let base = self.cable.system_diag(self.dt);
+        let mut traj = vec![self.cable.e_leak; (self.steps + 1) * n];
+        let (mut extra, mut rhs, mut scratch) = (vec![0.0; n], vec![0.0; n], vec![0.0; n]);
         for step in 0..self.steps {
-            let v = &traj[step];
+            let (done, rest) = traj.split_at_mut((step + 1) * n);
+            let v = &done[step * n..];
             extra.fill(0.0);
             for i in 0..n {
                 rhs[i] =
@@ -119,19 +119,20 @@ impl<'a> Problem<'a> {
                 extra[c] += g;
                 rhs[c] += g * syn.kind.reversal();
             }
-            let mut next = vec![0.0; n];
-            self.cable.solve(self.dt, &extra, &mut rhs, &mut next);
-            traj.push(next);
+            self.cable
+                .solve_prepared(&base, &extra, &mut rhs, &mut rest[..n], &mut scratch);
         }
         traj
     }
 
     /// Soma (compartment 0) voltage after each step.
     pub fn soma_trace(&self, weights: &[f64]) -> Vec<f64> {
+        let n = self.cable.len();
         self.trajectory(weights)
             .iter()
+            .step_by(n)
             .skip(1)
-            .map(|v| v[0])
+            .copied()
             .collect()
     }
 
@@ -150,26 +151,36 @@ impl<'a> Problem<'a> {
         weights: &[f64],
         loss: impl Fn(usize, f64) -> (f64, f64),
     ) -> (f64, Vec<f64>) {
+        let e = self.evaluate(weights, loss);
+        (e.loss, e.grad)
+    }
+
+    /// One forward and one adjoint pass: loss, gradient and the soma trace together.
+    pub fn evaluate(&self, weights: &[f64], loss: impl Fn(usize, f64) -> (f64, f64)) -> Evaluation {
         let n = self.cable.len();
         let traj = self.trajectory(weights);
+        let base = self.cable.system_diag(self.dt);
+        let soma: Vec<f64> = traj.iter().step_by(n).skip(1).copied().collect();
         let mut total = 0.0;
         let mut grad = vec![0.0; weights.len()];
         // adjoint = dL/dv^{step+1}, built up from the end of the simulation backwards
         let mut adjoint = vec![0.0; n];
-        let (value, d_soma) = loss(self.steps - 1, traj[self.steps][0]);
+        let (value, d_soma) = loss(self.steps - 1, soma[self.steps - 1]);
         total += value;
         adjoint[0] = d_soma;
-        let mut extra = vec![0.0; n];
-        let mut mu = vec![0.0; n];
+        let (mut extra, mut mu, mut rhs, mut scratch) =
+            (vec![0.0; n], vec![0.0; n], vec![0.0; n], vec![0.0; n]);
         for step in (0..self.steps).rev() {
-            let (v, v_next) = (&traj[step], &traj[step + 1]);
+            let v = &traj[step * n..(step + 1) * n];
+            let v_next = &traj[(step + 1) * n..(step + 2) * n];
             extra.fill(0.0);
             for (s, syn) in self.synapses.iter().enumerate() {
                 extra[syn.compartment] +=
                     weights[s] * self.drive[s][step] * syn.kind.block(v[syn.compartment]).0;
             }
-            let mut rhs = adjoint.clone();
-            self.cable.solve(self.dt, &extra, &mut rhs, &mut mu);
+            rhs.copy_from_slice(&adjoint);
+            self.cable
+                .solve_prepared(&base, &extra, &mut rhs, &mut mu, &mut scratch);
             // d/dv^step of mu · (b(v^step) - A(v^step) v^{step+1})
             for i in 0..n {
                 adjoint[i] = self.cable.cap[i] / self.dt * mu[i];
@@ -187,6 +198,17 @@ impl<'a> Problem<'a> {
                 adjoint[0] += d_soma;
             }
         }
-        (total, grad)
+        Evaluation {
+            loss: total,
+            grad,
+            soma,
+        }
     }
+}
+
+pub struct Evaluation {
+    pub loss: f64,
+    pub grad: Vec<f64>,
+    /// Soma voltage after each step.
+    pub soma: Vec<f64>,
 }
