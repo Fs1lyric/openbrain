@@ -55,3 +55,23 @@ not a systematic review. Re-check before making public originality claims.
 - Jones, Kording. Efficient optimization of ODE neuron models using gradient descent. arXiv 2407.04025. https://arxiv.org/abs/2407.04025
 - NeuroMorpho.Org scale (release 8.1): https://www.biorxiv.org/content/10.1101/2021.12.17.473026v1.full
 - Allen Cell Types Database (human + mouse morphologies, electrophysiology, biophysical models): https://brain-map.org/support/documentation/cell-types-database-physiology-and-morphology
+
+## Added 2026-10-12: inverse design, disease, chemistry
+
+- **Stiefel & Sejnowski 2007**, *J Neurophysiol* 98:513–526, "Mapping function onto neuronal
+  morphology". Optimised dendritic structures (in NEURON, probably evolutionary) for two tasks: linear
+  summation, and EPSP temporal order. The resulting shapes resembled nucleus laminaris and pyramidal
+  cells. This is the closest precedent for inverse design. Small scale, no gradients, and no comparison
+  against large real datasets. https://papers.cnl.salk.edu/PDFs/Mapping%20Function%20onto%20Neuronal%20Morphology%202007-3947.pdf
+- **Kirch & Gollo 2021**, *Sci Rep*, "Single-neuron dynamical effects of dendritic pruning implicated in
+  aging and neurodegeneration: towards a measure of neuronal reserve". Pruned NeuroMorpho cells; firing
+  rate, energy efficiency and dynamic range drop; resilience depends on topology. Closest precedent for
+  Q2, but it does not measure computational capacity. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7809359/
+- **Dhupia et al. 2015**, *Front Cell Neurosci*: progressive pruning of CA1 models changes resonance
+  and impedance maps. https://www.frontiersin.org/journals/cellular-neuroscience/articles/10.3389/fncel.2014.00456/pdf
+- **Cuntz group:** atrophy after denervation is partly homeostatic (granule cells retune excitability).
+  This is a counterpoint to assuming atrophy is purely pathological.
+- **NeuroMorpho API** (`/api/neuron/fields/experiment_condition`) exposes disease-model conditions: 5xFAD,
+  CK-p25, human APP overexpression, Huntington's disease, TBI, CTE, chronic stress, drug exposures.
+- **Chemistry precedents to validate against:** NEURON's RxD module, and STEPS (stochastic
+  reaction-diffusion).

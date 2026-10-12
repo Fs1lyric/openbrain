@@ -1,76 +1,106 @@
-# Research plan: the Neuron Compute Atlas
+# Research plan: openbrain
 
-## Question
+## Vision
 
-Across thousands of real reconstructed neurons, spanning species, brain regions and cell classes, what
-determines how much a single neuron can compute? Specifically: once dendritic size is accounted for,
-does the *structure* of the tree still predict computational capacity?
+A differentiable neuron simulator, with a Rust core and a Python API, for asking **what neurons compute
+and how disease, drugs and gases change it**, and for plugging into the software neuroscientists
+already use.
 
-## Contribution
+The flagship question: **why are neurons shaped the way they are?** Design optimal neurons by gradient
+descent, map the frontier of computing power against biological cost, then place thousands of real
+neurons on it: healthy, diseased, drugged, and starved of oxygen.
 
-1. **A cheap, simulator-native capacity measure: the Task Capacity Score (TCS).** Train the neuron's own
-   synaptic weights, through the biophysical simulation, on a ladder of tasks of increasing difficulty,
-   and report the hardest level it reliably learns. No surrogate DNN is trained.
-2. **A Hines-structured discrete adjoint in Rust.** Exact gradients of a loss on the somatic voltage with
-   respect to every synaptic weight, for about the cost of one extra simulation, on CPU.
-3. **The atlas.** TCS for thousands of NeuroMorpho / Allen cells, released as an open dataset with an
-   interactive 3D web viewer.
-4. **The answer** to the size-versus-structure question, written up arXiv-style.
+## Architecture
 
-## Hypotheses (pre-registered here before any atlas data exists)
+```
+            ┌──────────────── Python API · CLI · notebooks ────────────────┐
+ Interop    │ SWC · NeuroML import/export · NWB recordings · SONATA ·      │
+            │ NEURON cross-validation · NeuroMorpho / Allen fetchers       │
+            ├──────────────────────────────────────────────────────────────┤
+ Studies    │ Capacity (TCS) · Inverse design · Atlas · Disease reserve    │
+            ├──────────────────────────────────────────────────────────────┤
+ Perturb    │ morphology operators (pruning, spine loss, atrophy)          │
+            │ channelopathies (e.g. SCN1A, KCNQ2) · drugs · gases          │
+            ├──────────────────────────────────────────────────────────────┤
+ Rust core  │ cable solver (Hines) · discrete adjoint · ion channels ·     │
+            │ synapses (AMPA/NMDA/GABA) · reaction-diffusion chemistry     │
+            └──────────────────────────────────────────────────────────────┘
+```
 
-- **H1 (validity):** TCS ranks neurons like FCI does. On cells overlapping Aizenbud 2025 we expect human
-  > rat, human L2/3 most complex, and Spearman ρ > 0.6 with published FCI where models can be matched.
-- **H2 (ablation):** removing NMDA receptors lowers TCS sharply for every cell class.
-- **H3 (replication at scale):** dendritic surface area is the strongest single predictor of TCS across
-  all classes.
-- **H4 (new):** after controlling for surface area, topological features (branch-order distribution,
-  topological morphology descriptor entropy, electrotonic compartmentalisation) explain significant
-  residual variance, and cell classes (pyramidal, Purkinje, interneuron, granule) differ in capacity
-  per µm² of membrane.
+### Rust core
+- Multicompartment cable equation solved with the Hines method, plus its discrete adjoint for exact
+  gradients (see `literature.md`, gap 4).
+- Pluggable ion channels and synapses. Every parameter can be differentiated.
+- **Chemistry engine (reaction-diffusion):** tracks ion concentrations (Na⁺, K⁺, Ca²⁺, Cl⁻) per
+  compartment, so reversal potentials follow Nernst. It covers Ca²⁺ buffering, the ATP-dependent Na⁺/K⁺
+  pump and its energy cost, and user-defined reaction networks (mass-action kinetics) that diffuse along
+  dendrites.
 
-A negative result on H4 is still a result: "size is all you need" across 1,000+ real cells would be news.
+### Gases (through mechanisms with literature parameters)
+| Gas | Mechanism | Lets you simulate |
+| --- | --- | --- |
+| O₂ | supply → ATP production → Na⁺/K⁺ pump | hypoxia, ischemic stroke, anoxic depolarisation |
+| CO₂ | pH → proton modulation of NMDA receptors and channels | hypercapnia, acidosis |
+| Xenon, N₂O | NMDA receptor block | anaesthesia, neuroprotection |
+| Isoflurane, sevoflurane | GABA_A potentiation, K2P leak activation | general anaesthesia |
+| NO | diffusible messenger produced downstream of NMDA Ca²⁺ | retrograde signalling |
 
-## Method sketch
+### Disease and pharmacology library
+- **Morphology:** dendritic pruning, spine loss, atrophy. Real disease-model cells come from NeuroMorpho.
+  The API's `experiment_condition` field already lists 5xFAD and CK-p25 Alzheimer models, Huntington's
+  disease, traumatic brain injury, CTE, chronic stress, and drug exposures (checked 2026-10-12).
+- **Channelopathies:** conductance and kinetic shifts from the literature (e.g. SCN1A loss-of-function in
+  interneurons, as in Dravet syndrome).
+- **Drugs:** receptor and channel blocks as parameter overrides (TTX, 4-AP, memantine, ketamine), as the
+  HH API already does with `HHNeuron(g_na=0)`.
 
-- **Cells:** NeuroMorpho SWC files, filtered for complete dendrites and quality; Allen Cell Types for
-  human/mouse cells with matched data.
-- **Biophysics (uniform across cells, as in FCI):** passive dendrites with fixed specific membrane
-  properties, AMPA + NMDA (Mg²⁺ block) synapses, Hodgkin–Huxley soma. Active dendritic channels are a
-  later ablation.
-- **Inputs:** k input channels, each a fixed random cluster of synapses on the tree. A task input is a
-  pattern of channels firing brief bursts.
-- **Task ladder:** random Boolean functions of dimension n = 2…12 (following Agrawal 2025's phase
-  transition), n-bit parity, and temporal-order tasks.
-- **Training:** gradient descent on synaptic weights via the adjoint; loss on somatic spike or peak
-  depolarisation; several random seeds.
-- **Score:** TCS = the critical dimension n* where P(learned) crosses 0.5.
+### Interop
+SWC and NeuroML in and out, NWB for loading experimental recordings, SONATA for networks, and the
+same cell runnable in NEURON for cross-validation. Researchers bring their existing cells and data, and
+can take results back to their own tools.
 
-## Milestones (each one gates the next)
+## Research questions
 
-1. **Pilot (go/no-go).** Cable solver + adjoint verified against finite differences; one real NeuroMorpho
-   neuron learns XOR. *Go* if one cell × one task trains in under 1 CPU-minute and the gradient matches
-   finite differences to 1e-6 relative error.
-2. **Validation.** H1 and H2 on a small cell set, plus checks against analytical cable theory and against
-   NEURON.
-3. **Budget check.** Measure CPU-hours per cell for the full ladder; extrapolate to 1,000 cells. Run locally
-   (16 cores) if feasible, otherwise in the cloud (see below).
-4. **Atlas run.** 1,000+ cells, H3 and H4 analysis.
-5. **Release.** Dataset, web atlas, write-up.
+- **Q1. Frontier (flagship).** Inverse-design dendrites for maximum Task Capacity Score (TCS) under
+  membrane-area (energy) and wiring-length costs. Do real neurons sit on the compute-cost frontier?
+  This extends Stiefel & Sejnowski 2007 (optimisation over 2 simple tasks) to gradient-based design
+  checked against thousands of real cells.
+- **Q2. Computational reserve in disease.** How much capacity do Alzheimer's-model, Huntington's, TBI and
+  CTE neurons lose compared with controls from the same lab and region? Does topology predict
+  resilience? This extends Kirch & Gollo 2021, who measured firing rate and dynamic range under pruning,
+  not computational capacity.
+- **Q3. Gases and drugs.** Do anaesthetic gases reduce single-neuron computational capacity, and in what
+  order (xenon vs isoflurane)? How fast does capacity collapse under hypoxia, and do some cell classes
+  hold out longer?
+- **Q4. Validity (gates everything).** TCS agrees with FCI rankings (Aizenbud 2025); NMDA removal drops
+  TCS; the chemistry reproduces anoxic depolarisation timing measured in brain slices.
+
+## Milestones (each gates the next)
+
+1. **Pilot.** Cable solver + adjoint (matches finite differences to 1e-6); one real neuron learns XOR in
+   under 1 CPU-minute.
+2. **Perturbation API + interop v1.** SWC, NeuroML import, NeuroMorpho fetcher (with disease metadata),
+   drug and channelopathy overrides on multicompartment cells.
+3. **Chemistry core.** Ion concentrations, Nernst, Na⁺/K⁺ pump with ATP, O₂ supply. Validate against
+   anoxic depolarisation onset in slices and against NEURON's RxD on shared test cases.
+4. **Capacity validation (Q4).**
+5. **Inverse design (Q1).**
+6. **Atlas + disease reserve (Q2).** 1,000+ cells, local cores or cloud.
+7. **Gases study (Q3).**
+8. **Release.** Docs site, dataset, interactive 3D atlas, write-up.
+
+## Honest limits
+
+- The simulator turns known mechanisms into predictions. It cannot discover new pharmacology; its gas and
+  drug results are only as good as the published parameters behind them, and it must cite them.
+- Single-cell results do not equal brain-level effects (consciousness, cognition). The write-up must
+  not overclaim.
+- Scope is large. Milestones 1–4 are a strong project on their own; each later milestone adds a result,
+  not a requirement.
+- Novelty rests on targeted searches. Do a deeper check before making public claims.
 
 ## Compute
 
-Target: at most 1 CPU-hour per cell, so 1,000 cells ≈ 1,000 CPU-hours (about 3 days on 16 local
-cores). Remote Claude Code sessions in Anthropic's cloud can run tests and smaller sweeps; first measure
-their cores and RAM. If the full atlas outgrows both, use spot CPU instances. The design is CPU-parallel
-across cells, with no GPU dependency.
-
-## Risks
-
-- **TCS and FCI measure different things** (learnability vs I/O mimicry). If H1 fails, report it, and
-  treat TCS as a complementary measure rather than a replacement.
-- **Uniform biophysics across cells is a simplification** (FCI makes the same choice). Cell-specific
-  channel models from the Allen database are a follow-up.
-- **Reconstruction quality varies across labs**, so filter for quality and control for source lab in
-  the analysis.
-- **Novelty is based on a targeted search.** Do a deeper check before any public claims.
+Target: at most 1 CPU-hour per cell for the full task ladder. Local 16 cores for development; remote
+Claude Code sessions for tests and small sweeps (measure their resources first); spot CPU instances
+for the atlas if needed. No GPU dependency.
