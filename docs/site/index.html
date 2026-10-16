@@ -119,6 +119,14 @@ tr.us td { color: var(--ink); }
 .step p { color: var(--ink-2); font-size: 15px; }
 .step code { display: block; margin-top: 16px; font: 400 12.5px/1.7 var(--mono); color: var(--ink-2); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: pre; }
 .step svg { width: 100%; height: 90px; margin-top: 18px; }
+details.tech { margin-top: 16px; font-size: 14px; color: var(--ink-3); }
+details.tech summary { cursor: pointer; font: 500 12px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); list-style: none; }
+details.tech summary::-webkit-details-marker { display: none; }
+details.tech summary::before { content: "+ "; }
+details.tech[open] summary::before { content: "− "; }
+details.tech summary:hover { color: var(--ink-2); }
+details.tech > *:not(summary) { margin-top: 10px; }
+.head details.tech p { color: var(--ink-3); font-size: 14px; }
 
 .next { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
 .next ol { list-style: none; counter-reset: s; }
@@ -185,18 +193,18 @@ footer a:hover { color: var(--ink); }
 
 <header class="hero" id="top">
   <div>
-    <div class="eyebrow">Differentiable neuron simulation · Rust</div>
-    <h1>A real neuron, <em>trained by gradient descent.</em></h1>
-    <p class="lede">openbrain simulates reconstructed neurons with the full cable equations and computes exact gradients through them. On a laptop CPU, a rat CA1 pyramidal cell learns XOR in 34–98 Adam steps (9–23 seconds), trained directly rather than through a surrogate network.</p>
+    <div class="eyebrow">Brain simulation · Open source</div>
+    <h1>I taught a single brain cell <em>to make a decision.</em></h1>
+    <p class="lede">openbrain is a simulator I built from scratch that rebuilds a real rat neuron, all 4,229 pieces of it, and trains it the way you would train an AI model. In under 30 seconds on a laptop, the cell learns a simple rule: react when one signal arrives, stay calm when two do.</p>
     <div class="cta">
       <a class="btn primary" href="#demo">Try the live neuron</a>
       <a class="btn" href="https://github.com/Fs1lyric/openbrain/blob/main/docs/writeup.md">Read the write-up</a>
     </div>
     <div class="stats">
-      <div class="stat"><b data-count="4229">0</b><span>compartments</span></div>
-      <div class="stat"><b data-count="96">0</b><span>trained synapses</span></div>
-      <div class="stat"><b data-count="34">0</b><span>Adam steps</span></div>
-      <div class="stat"><b data-count="2.4" data-suffix="×">0</b><span>faster gradients than Jaxley</span></div>
+      <div class="stat"><b data-count="4229">0</b><span>pieces of the cell simulated</span></div>
+      <div class="stat"><b data-count="96">0</b><span>connections it learned</span></div>
+      <div class="stat"><b data-count="34">0</b><span>training steps, at best</span></div>
+      <div class="stat"><b data-count="2.4" data-suffix="×">0</b><span>faster training than a leading tool</span></div>
     </div>
   </div>
   <div class="stage brain-stage">
@@ -218,9 +226,9 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">01 · Live demo</div>
-        <h2>The trained CA1 cell in 3D.</h2>
+        <h2>Watch the neuron react.</h2>
       </div>
-      <p>Colour shows the simulated membrane voltage in each compartment. Toggle inputs A and B to see how the cell responds, and drag to rotate.</p>
+      <p>This is the trained cell, rebuilt from a real rat brain scan. Colour shows its electrical activity. Switch inputs A and B on and off to see how it responds, and drag to spin it.</p>
     </div>
     <div class="stage reveal" id="stage">
     <canvas id="neuron" aria-label="Rotating 3D reconstruction of a CA1 neuron. Membrane voltage is shown as color while the trained cell responds to inputs A and B."></canvas>
@@ -251,9 +259,14 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">02 · Result</div>
-        <h2>It responds to one input, not to both.</h2>
+        <h2>It learned a rule: one signal yes, two signals no.</h2>
       </div>
-      <p>Inputs A and B each drive AMPA, NMDA and GABA<sub>A</sub> synapses at 16 dendritic sites. Gradient descent tunes all 96 weights until the average soma voltage is higher when exactly one input is active than when none or both are. Over six random seeds, training took 34–98 steps and 9–23 CPU-seconds.</p>
+      <div>
+        <p>Computer scientists call this rule XOR, and it's a classic test because one simple neuron model famously can't learn it. Training adjusted the strength of the cell's 96 connections until it got all four cases right. Across six runs, that took 9 to 23 seconds.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>Inputs A and B each drive AMPA, NMDA and GABA<sub>A</sub> synapses at 16 dendritic sites. Gradient descent tunes all 96 weights until the average soma voltage is higher when exactly one input is active than when none or both are. Over six random seeds, training took 34–98 Adam steps and 9–23 CPU-seconds.</p>
+        </details>
+      </div>
     </div>
     <div class="grid2">
       <div class="card reveal">
@@ -265,11 +278,13 @@ footer a:hover { color: var(--ink); }
         <svg class="chart" id="traces" viewBox="0 0 640 340" role="img" aria-label="Soma voltage traces of the trained neuron for the four input patterns"></svg>
       </div>
       <div class="card note reveal">
-        <span class="tag">How the readout works</span>
-        <h3>Scored on the mean over 10–60 ms</h3>
-        <p>When only one input fires, the soma depolarises and stays up. When both fire, the trained inhibition of each input lands on the other’s excitation, and the response falls back sooner and dips below rest.</p>
-        <p>The loss is a softplus on every true/false gap, with exact gradients from a discrete adjoint: one backward Hines solve per time step, about the cost of a second simulation.</p>
-        <p class="mono" style="font-size:13px;color:var(--ink-3);margin-top:18px">gap ≥ 1 mV → solved · checked against finite differences to 1e-6</p>
+        <span class="tag">How it decides</span>
+        <h3>Each input learned to cancel the other</h3>
+        <p>With one input on, the cell charges up and stays up: that's a “yes”. With both on, each input's calming signal lands on the other's exciting one, so the response fades fast: that's a “no”.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>The readout is the mean soma voltage over 10–60 ms. The loss is a softplus on every true/false gap, with exact gradients from a discrete adjoint: one backward Hines solve per time step, about the cost of a second simulation.</p>
+          <p class="mono" style="font-size:13px">gap ≥ 1 mV → solved · checked against finite differences to 1e-6</p>
+        </details>
       </div>
     </div>
   </div>
@@ -280,9 +295,14 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">03 · Control</div>
-        <h2>Do the dendrites matter? Partly.</h2>
+        <h2>Does the cell's shape matter? Partly.</h2>
       </div>
-      <p>I expected a point neuron to fail at XOR, but it doesn’t: over the 60 ms window, two fast inhibitory dips add up while the slower excitation saturates. So instead of pass or fail, the control compares the best margin each configuration reaches in 300 steps, with the same 96 synapses in every case.</p>
+      <div>
+        <p>Real neurons have long branches. To test whether they help, I kept the same 96 connections and moved them around: spread along the branches, piled at the centre, or on a simplified cell with no branches at all. Spreading them out won every time against piling them at the centre. The branchless cell surprised me, though: it learned the rule too.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>I expected a point neuron to fail at XOR, but it doesn’t: over the 60 ms window, two fast inhibitory dips add up while the slower excitation saturates. So instead of pass or fail, the control compares the best margin each configuration reaches in 300 steps, with the same 96 synapses in every case.</p>
+        </details>
+      </div>
     </div>
     <div class="grid2">
       <div class="card reveal">
@@ -290,9 +310,11 @@ footer a:hover { color: var(--ink); }
       </div>
       <div class="card note reveal">
         <span class="tag">Finding</span>
-        <h3>Placement beats the soma control 8 / 8</h3>
-        <p>Moving the same synapses onto dendrites always widens the margin over putting them on the soma: 1.27–2.81 mV against 1.19 mV.</p>
-        <p>A single-compartment neuron with the same membrane area reaches 1.65 mV, and 5 of 8 placements beat it. So where the synapses sit matters about as much as whether the cell has dendrites at all.</p>
+        <h3>Branches beat the centre 8 times out of 8</h3>
+        <p>Spreading connections along the branches always gave a clearer answer than piling them at the centre. Against the branchless cell, branches won 5 times out of 8. So <em>where</em> connections sit matters about as much as whether the cell has branches at all.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>Dendritic placements reach a best margin of 1.27–2.81 mV against 1.19 mV for soma placement. A single-compartment neuron with the same membrane area reaches 1.65 mV.</p>
+        </details>
         <p>The next phase tests this across 1,000+ real neurons.</p>
       </div>
     </div>
@@ -304,9 +326,14 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">04 · Benchmark</div>
-        <h2>Same cell, same inputs, three simulators.</h2>
+        <h2>Faster than the tools scientists use today.</h2>
       </div>
-      <p>openbrain’s 4,229 cylinders are exported verbatim into NEURON and Jaxley, then driven by the same current pulses at 16 sites for 60 ms at dt = 0.1 ms. Accuracy is measured against NEURON with 9 segments per cylinder and dt = 0.0025 ms.</p>
+      <div>
+        <p>I ran the exact same cell in openbrain and in two established simulators: NEURON, the field standard since the 1990s, and Jaxley, a newer one built for training. openbrain ran 1.4× faster than NEURON and trained 2.4× faster than Jaxley.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>openbrain’s 4,229 cylinders are exported verbatim into NEURON and Jaxley, then driven by the same current pulses at 16 sites for 60 ms at dt = 0.1 ms. Accuracy is measured against NEURON with 9 segments per cylinder and dt = 0.0025 ms.</p>
+        </details>
+      </div>
     </div>
     <div class="grid2">
       <div class="card reveal">
@@ -324,7 +351,10 @@ footer a:hover { color: var(--ink); }
           <thead><tr><th>simulator</th><th>forward</th><th>+ gradient</th><th>max error</th></tr></thead>
           <tbody></tbody>
         </table>
-        <p style="margin-top:16px;font-size:13px;color:var(--ink-3)">The gradients agree with Jaxley to 0.2%. NEURON is twice as accurate at equal dt; openbrain currently applies each input one time step early, and fixing that is next. Jaxley is built for GPUs, and this test ran on CPU only.</p>
+        <p style="margin-top:16px;font-size:14px;color:var(--ink-2)">To be fair about it: NEURON is still more precise, because openbrain currently delivers each input a moment too early. Fixing that is next.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>The gradients agree with Jaxley to 0.2%. NEURON is twice as accurate at equal dt; openbrain applies each input one time step early. Jaxley is built for GPUs, and this test ran on CPU only.</p>
+        </details>
       </div>
     </div>
   </div>
@@ -335,30 +365,44 @@ footer a:hover { color: var(--ink); }
     <div class="head reveal">
       <div>
         <div class="eyebrow">05 · Method</div>
-        <h2>Cable solver, synapses and gradients, all in Rust.</h2>
+        <h2>Built from scratch in Rust.</h2>
       </div>
-      <p>Each part was written against a test first: published HH behaviour, cable convergence, supralinear NMDA summation, and adjoint gradients against finite differences for every synapse type.</p>
+      <div>
+        <p>Three core pieces, each checked against published neuroscience before I built the next one.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>Each part was written against a test first: published HH behaviour, cable convergence, supralinear NMDA summation, and adjoint gradients against finite differences for every synapse type.</p>
+        </details>
+      </div>
     </div>
     <div class="steps">
       <div class="card step reveal">
         <div class="n">01</div>
-        <h3>Cable on a real tree</h3>
-        <p>Each SWC point becomes a cylinder. Backward Euler turns every time step into a tree-structured linear system, solved in O(n) by the Hines method.</p>
+        <h3>The cell's real shape</h3>
+        <p>The neuron is loaded from a 3D scan and split into thousands of tiny tubes, so electricity flows through it the way it does in the real cell.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>Each SWC point becomes a cylinder. Backward Euler turns every time step into a tree-structured linear system, solved in O(n) by the Hines method.</p>
+        </details>
         <svg viewBox="0 0 300 90" aria-hidden="true"><g stroke="#3987e5" stroke-width="2" fill="none" stroke-linecap="round"><path d="M20 70 H120 L170 30 H280"/><path d="M120 70 L170 80 H260"/><path d="M170 30 L210 10"/></g><g fill="#3fe0cf"><circle cx="20" cy="70" r="7"/><circle cx="70" cy="70" r="3"/><circle cx="120" cy="70" r="3"/><circle cx="170" cy="30" r="3"/><circle cx="225" cy="30" r="3"/><circle cx="280" cy="30" r="3"/><circle cx="170" cy="80" r="3"/><circle cx="215" cy="80" r="3"/><circle cx="260" cy="80" r="3"/><circle cx="210" cy="10" r="3"/></g></svg>
       </div>
       <div class="card step reveal">
         <div class="n">02</div>
-        <h3>Conductance synapses</h3>
-        <p>AMPA, NMDA with its Mg²⁺ block, and GABA<sub>A</sub> enter as conductances with double-exponential kinetics. The block uses the previous step’s voltage, so each step stays one linear solve.</p>
-        <code>g(t) = w · s(t) · B(V)
+        <h3>Realistic connections</h3>
+        <p>Three kinds of connections, modelled on real brain chemistry: two that excite the cell and one that calms it down.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>AMPA, NMDA with its Mg²⁺ block, and GABA<sub>A</sub> enter as conductances with double-exponential kinetics. The block uses the previous step’s voltage, so each step stays one linear solve.</p>
+          <code>g(t) = w · s(t) · B(V)
 B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
+        </details>
       </div>
       <div class="card step reveal">
         <div class="n">03</div>
-        <h3>Exact adjoint gradients</h3>
-        <p>The adjoint runs the simulation backwards in time. Because the system matrix is symmetric, each backward step is another Hines solve, so the gradient for every weight together costs about one extra simulation.</p>
-        <code>A(vⁿ) λⁿ = ∂L/∂vⁿ⁺¹ + …
+        <h3>Learning by running time backwards</h3>
+        <p>To work out how to adjust every connection at once, the simulator replays the experiment in reverse. That costs about as much as running it one more time.</p>
+        <details class="tech"><summary>Technical details</summary>
+          <p>The adjoint runs the simulation backwards in time. Because the system matrix is symmetric, each backward step is another Hines solve, so the gradient for every weight together costs about one extra simulation.</p>
+          <code>A(vⁿ) λⁿ = ∂L/∂vⁿ⁺¹ + …
 ∂L/∂w_s = Σₙ λⁿ_c · s(tₙ) · B · (E − vⁿ⁺¹)</code>
+        </details>
       </div>
     </div>
   </div>
@@ -368,17 +412,20 @@ B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
   <div class="wrap next">
     <div class="reveal">
       <div class="eyebrow">06 · Roadmap</div>
-      <h2 style="font:500 clamp(30px,3.6vw,44px)/1.08 var(--sans);letter-spacing:-.03em;margin:14px 0 18px">Next: the Neuron Compute Atlas</h2>
-      <p style="color:var(--ink-2);max-width:32em">Measure learning capacity across 1,000+ reconstructed neurons and ask whether dendritic structure predicts it beyond cell size. The closest published study covered 24 cells with about 2.3 GPU-years of compute. Training each cell directly takes about a CPU-minute.</p>
+      <h2 style="font:500 clamp(30px,3.6vw,44px)/1.08 var(--sans);letter-spacing:-.03em;margin:14px 0 18px">Next: which neuron shapes learn best?</h2>
+      <p style="color:var(--ink-2);max-width:32em">The big question is why neurons are shaped the way they are. Next I'll train over 1,000 real neurons and see whether shape predicts how much a cell can learn. The closest published study tested 24 cells and needed years of GPU time; openbrain trains each cell in about a minute on a laptop.</p>
+      <details class="tech" style="max-width:32em"><summary>Technical details</summary>
+        <p>The Neuron Compute Atlas: measure learning capacity across 1,000+ reconstructed NeuroMorpho neurons and ask whether dendritic structure predicts it beyond cell size. The closest published study covered 24 cells with about 2.3 GPU-years of compute. Training each cell directly takes about a CPU-minute.</p>
+      </details>
     </div>
     <ol class="reveal">
-      <li class="done"><span><b>Hodgkin–Huxley core</b> in Rust with a Python API</span></li>
-      <li class="done"><span><b>Cable solver</b> on SWC morphologies (Hines)</span></li>
-      <li class="done"><span><b>Synapses + exact adjoint gradients</b></span></li>
-      <li class="done"><span><b>XOR pilot, controls and benchmark</b></span></li>
-      <li><span><b>Active dendrites</b> and input-timing fix</span></li>
-      <li><span><b>Capacity atlas</b> across 1,000+ NeuroMorpho cells</span></li>
-      <li><span><b>Inverse design:</b> why neurons are shaped the way they are</span></li>
+      <li class="done"><span><b>Neuron engine</b> in Rust, usable from Python</span></li>
+      <li class="done"><span><b>Real cell shapes</b> from 3D scans</span></li>
+      <li class="done"><span><b>Connections + training</b></span></li>
+      <li class="done"><span><b>First result, fairness checks and speed test</b></span></li>
+      <li><span><b>Smarter branches</b> and the input-timing fix</span></li>
+      <li><span><b>1,000-neuron study</b> of shape vs. learning</span></li>
+      <li><span><b>The big one:</b> why neurons are shaped the way they are</span></li>
     </ol>
   </div>
 </section>
@@ -387,7 +434,7 @@ B(V) = 1 / (1 + [Mg]/3.57 · e^(−0.062 V))</code>
   <canvas id="streams" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="eyebrow" style="margin-bottom:18px">Open source · MIT</div>
-    <h2>Every number on this page can be reproduced from the repo.</h2>
+    <h2>Every number on this page can be checked. The code is all public.</h2>
     <div class="cta" style="justify-content:center;display:flex;gap:12px;flex-wrap:wrap">
       <a class="btn primary" href="https://github.com/Fs1lyric/openbrain">View on GitHub</a>
       <a class="btn" href="https://github.com/Fs1lyric/openbrain/blob/main/docs/writeup.md#reproduce">Reproduce the results</a>
